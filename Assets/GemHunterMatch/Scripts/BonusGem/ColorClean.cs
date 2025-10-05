@@ -17,7 +17,8 @@ namespace Match3
         
         public override void Awake()
         {
-            m_Usable = true;
+            // 顏色清除現在會自動響應相鄰清除，不需要手動激活
+            m_Usable = false;
             
             GameManager.Instance.PoolSystem.AddNewInstance(UseEffect, 2);
             m_PositionMap = new Texture2D(64, 1, TextureFormat.RGBAFloat, false);

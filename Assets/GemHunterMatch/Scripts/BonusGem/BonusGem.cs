@@ -13,7 +13,11 @@ namespace Match3
     {
         public List<MatchShape> Shapes;
         
-        public virtual void Awake(){}
+        public virtual void Awake()
+        {
+            // 獎勵寶石不再需要手動激活，它們會自動響應相鄰清除
+            m_Usable = false;
+        }
 
         //helper function that inheriting class can use to destroy a gem, but handle obstacle and bonus gem properly
         //if the cell don't contains either an obstacle or usable gem and the targetted gem is destroyed, add it to the

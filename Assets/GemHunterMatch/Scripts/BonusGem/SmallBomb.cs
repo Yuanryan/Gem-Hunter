@@ -11,7 +11,8 @@ namespace Match3
         
         public override void Awake()
         {
-            m_Usable = true;
+            // 小型炸彈現在會自動響應相鄰清除，不需要手動激活
+            m_Usable = false;
         }
 
         public override void Use(Gem swappedGem, bool isBonus = true)

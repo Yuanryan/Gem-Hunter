@@ -852,6 +852,9 @@ namespace Match3
                         {
                             m_EmptyCells.Add(gemIdx);
                         }
+                        
+                        // 檢查相鄰的獎勵寶石是否需要激活
+                        CheckAdjacentBonusGems(gemIdx);
 
                         //
                         if (gem.CurrentState != Gem.State.Disappearing)
@@ -1668,6 +1671,60 @@ namespace Match3
                         cellContent.ContainingGem.MoveTo(cell);
                     }
                 }
+            }
+        }
+
+        void CheckAdjacentBonusGems(Vector3Int clearedCell)
+        {
+            // 檢查8個方向的相鄰格子
+            Vector3Int[] directions = new Vector3Int[]
+            {
+                Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right,
+                Vector3Int.up + Vector3Int.left, Vector3Int.up + Vector3Int.right,
+                Vector3Int.down + Vector3Int.left, Vector3Int.down + Vector3Int.right
+            };
+
+            foreach (var direction in directions)
+            {
+                var adjacentCell = clearedCell + direction;
+                if (CellContent.TryGetValue(adjacentCell, out var cellContent) && 
+                    cellContent.ContainingGem != null)
+                {
+                    // 檢查是否是獎勵寶石
+                    if (cellContent.ContainingGem is BonusGem bonusGem)
+                    {
+                        // 激活獎勵寶石
+                        ActivateBonusGem(bonusGem, adjacentCell);
+                    }
+                }
+            }
+        }
+
+        void ActivateBonusGem(BonusGem bonusGem, Vector3Int cell)
+        {
+            // 檢查獎勵寶石是否已經被使用過
+            if (bonusGem.Used)
+                return;
+
+            // 激活獎勵寶石
+            bonusGem.Use(null, false);
+            
+            // 播放激活音效
+            if (bonusGem is SmallBomb smallBomb && smallBomb.TriggerSound != null)
+            {
+                GameManager.Instance.PlaySFX(smallBomb.TriggerSound);
+            }
+            else if (bonusGem is LargeBomb largeBomb && largeBomb.TriggerSound != null)
+            {
+                GameManager.Instance.PlaySFX(largeBomb.TriggerSound);
+            }
+            else if (bonusGem is LineRocket lineRocket && lineRocket.TriggerSound != null)
+            {
+                GameManager.Instance.PlaySFX(lineRocket.TriggerSound);
+            }
+            else if (bonusGem is ColorClean colorClean && colorClean.TriggerSound != null)
+            {
+                GameManager.Instance.PlaySFX(colorClean.TriggerSound);
             }
         }
 
