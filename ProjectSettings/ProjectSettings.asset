@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 28
-  productGUID: 00000000000000000000000000000000
+  productGUID: 629c4d5616c45ee42bcfe2dd581d421a
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -17,7 +17,7 @@ PlayerSettings:
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
-  m_ShowUnitySplashScreen: 1
+  m_ShowUnitySplashScreen: 0
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
   m_SplashScreenAnimation: 1
@@ -888,7 +888,7 @@ PlayerSettings:
   cloudProjectId: 0a66853b-fbfe-43af-96ac-f7e86b796e98
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: 2d-game-match3
+  projectName: Gemhunter
   organizationId: unity_d61222fb67c0924e1539
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
