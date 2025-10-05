@@ -101,6 +101,9 @@ namespace Match3
                 DontDestroyOnLoad(gameObject);
                 
                 Application.targetFrameRate = 60;
+                
+                // 確保只有一個EventSystem
+                EventSystemManager.Instance.EnsureSingleEventSystem();
             
                 ClickAction.Enable();
                 ClickPosition.Enable();

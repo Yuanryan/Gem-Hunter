@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using UnityEngine.EventSystems;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -106,16 +107,6 @@ namespace Match3
         private Label m_CoinLabel;
         private Label m_LiveLabel;
         private Label m_StarLabel;
-        
-        // 戰鬥界面相關
-        private VisualElement m_CombatUI;
-        private VisualElement m_PlayerPanel;
-        private VisualElement m_EnemyPanel;
-        private Label m_PlayerHealthLabel;
-        private Label m_EnemyHealthLabel;
-        private VisualElement m_PlayerHealthBar;
-        private VisualElement m_EnemyHealthBar;
-        private Label m_TurnIndicator;
     
         // Shop
         private VisualElement m_ShopRoot;
@@ -149,6 +140,9 @@ namespace Match3
 
         private void Start()
         {
+            // 確保只有一個EventSystem
+            EventSystemManager.Instance.EnsureSingleEventSystem();
+            
             m_WinTriggerID = Animator.StringToHash("Win");
             m_MatchTriggerId = Animator.StringToHash("Match");
             m_LowMoveTriggerId = Animator.StringToHash("LowMove");
@@ -350,9 +344,6 @@ namespace Match3
             
             ApplySafeArea(m_Document.rootVisualElement.Q<VisualElement>("FullContent"));
             ApplySafeArea(m_EndScreen);
-            
-            // 初始化戰鬥界面
-            InitializeCombatUI();
         }
     
         public void Init()

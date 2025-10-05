@@ -181,9 +181,47 @@ namespace Match3
         private int m_PlayerHealth = 100;
         private int m_EnemyHealth = 100;
         private bool m_IsCombatMode = true; // 是否處於戰鬥模式
+        private bool m_HasCalculatedDamageThisTurn = false; // 本回合是否已計算傷害
         private float m_EnemyTurnTimer = 0f;
         private const float ENEMY_TURN_DURATION = 2f; // 敵人回合持續時間
-        private bool m_HasCalculatedDamageThisTurn = false; // 本回合是否已計算傷害
+        
+        [Header("戰鬥配置")]
+        [SerializeField] private CombatConfig m_CombatConfig;
+        
+        // UI更新事件
+        public static event Action<int, int, bool> OnCombatStateChanged; // 玩家血量, 敵人血量, 是否玩家回合
+        public static event Action<bool> OnCombatEnded; // 是否勝利
+        
+        // 初始化戰鬥系統
+        private void InitializeCombat()
+        {
+            if (m_CombatConfig != null)
+            {
+                m_PlayerHealth = m_CombatConfig.PlayerMaxHealth;
+                m_EnemyHealth = m_CombatConfig.EnemyMaxHealth;
+            }
+            else
+            {
+                Debug.LogWarning("沒有設定CombatConfig，使用默認值");
+                m_PlayerHealth = 100;
+                m_EnemyHealth = 100;
+            }
+            
+            m_IsPlayerTurn = true;
+            m_IsCombatMode = true;
+            m_CurrentTurnGemsCleared = 0;
+            m_HasCalculatedDamageThisTurn = false;
+            m_EnemyTurnTimer = 0f;
+        }
+        
+        // 更新戰鬥UI
+        private void UpdateCombatUI()
+        {
+            Debug.Log($"UpdateCombatUI() - 更新UI: Player={m_PlayerHealth}, Enemy={m_EnemyHealth}, PlayerTurn={m_IsPlayerTurn}");
+            
+            // 觸發事件（給CombatUIController監聽）
+            OnCombatStateChanged?.Invoke(m_PlayerHealth, m_EnemyHealth, m_IsPlayerTurn);
+        }
 
         private VisualEffect m_GemHoldVFXInstance;
 
@@ -336,6 +374,12 @@ namespace Match3
 
 
             UIHandler.Instance.Init();
+            
+            // 初始化戰鬥系統
+            InitializeCombat();
+            
+            // 初始化戰鬥UI
+            UpdateCombatUI();
 
 
 
@@ -1065,8 +1109,6 @@ namespace Match3
 
                 MatchTicking();
 
-                
-
                 incrementHintTimer = false;
 
                 m_BoardChanged = true;
@@ -1142,6 +1184,11 @@ namespace Match3
             if (incrementHintTimer)
 
             {
+                // Board完全穩定，可以進行UI更新
+                if (m_CurrentTurnGemsCleared > 0 && !m_HasCalculatedDamageThisTurn)
+                {
+                    CalculateAndLogDamage();
+                }
 
                 //nothing can happen anymore, if we were in the last stretch trigger the end
 
@@ -1796,12 +1843,6 @@ namespace Match3
 
                 }
 
-            }
-            
-            // 當所有匹配都完成且是玩家回合時，計算傷害
-            if (m_TickingMatch.Count == 0 && m_IsPlayerTurn && m_IsCombatMode && !m_HasCalculatedDamageThisTurn)
-            {
-                CalculateAndLogDamage();
             }
 
         }
@@ -3377,8 +3418,13 @@ namespace Match3
                 // 敵人回合
                 m_EnemyTurnTimer += Time.deltaTime;
                 
-                if (m_EnemyTurnTimer >= ENEMY_TURN_DURATION)
+                float enemyTurnDuration = m_CombatConfig?.EnemyTurnDuration ?? ENEMY_TURN_DURATION;
+                Debug.Log($"HandleCombatTurn() - 敵人回合計時: {m_EnemyTurnTimer:F2}/{enemyTurnDuration:F2}");
+                
+                if (m_EnemyTurnTimer >= enemyTurnDuration)
                 {
+                    Debug.Log("HandleCombatTurn() - 敵人回合時間到，執行敵人行動");
+                    
                     // 敵人回合結束，執行敵人行動
                     ExecuteEnemyTurn();
                     
@@ -3388,6 +3434,9 @@ namespace Match3
                     m_HasCalculatedDamageThisTurn = false; // 重置傷害計算標記
                     
                     Debug.Log("敵人回合結束，輪到玩家回合");
+                    
+                    // 更新UI
+                    UpdateCombatUI();
                 }
             }
         }
@@ -3395,8 +3444,15 @@ namespace Match3
         // 執行敵人回合
         void ExecuteEnemyTurn()
         {
-            // 敵人對玩家造成隨機傷害
-            int enemyDamage = Random.Range(5, 15);
+            Debug.Log("ExecuteEnemyTurn() - 開始執行敵人回合");
+            
+            // 敵人對玩家造成隨機傷害：使用CombatConfig中的設定
+            int enemyMinDamage = m_CombatConfig?.EnemyMinDamage ?? 5;
+            int enemyMaxDamage = m_CombatConfig?.EnemyMaxDamage ?? 15;
+            int enemyDamage = Random.Range(enemyMinDamage, enemyMaxDamage + 1);
+            
+            Debug.Log($"ExecuteEnemyTurn() - 攻擊前玩家血量: {m_PlayerHealth}");
+            
             m_PlayerHealth -= enemyDamage;
             if (m_PlayerHealth < 0) m_PlayerHealth = 0;
             
@@ -3408,28 +3464,29 @@ namespace Match3
             {
                 Debug.Log("玩家被擊敗！戰鬥失敗！");
                 m_IsCombatMode = false;
+                OnCombatEnded?.Invoke(false); // 失敗
             }
+            
+            // UI更新將在敵人回合結束時進行
         }
 
         // 計算並記錄傷害輸出
         void CalculateAndLogDamage()
         {
-            // 防止重複計算
-            if (m_HasCalculatedDamageThisTurn)
-                return;
-                
-            m_HasCalculatedDamageThisTurn = true;
-            
             if (m_CurrentTurnGemsCleared > 0)
             {
-                // 基礎傷害計算：每消除一個寶石造成10點傷害
-                int baseDamage = m_CurrentTurnGemsCleared * 10;
+                // 基礎傷害計算：使用CombatConfig中的設定
+                int baseDamagePerGem = m_CombatConfig?.BaseDamagePerGem ?? 10;
+                int baseDamage = m_CurrentTurnGemsCleared * baseDamagePerGem;
                 
-                // 連擊加成：如果消除超過3個寶石，每多一個增加5點傷害
+                // 連擊加成：使用CombatConfig中的設定
                 int comboBonus = 0;
-                if (m_CurrentTurnGemsCleared > 3)
+                int comboThreshold = m_CombatConfig?.ComboThreshold ?? 3;
+                int comboBonusPerGem = m_CombatConfig?.ComboBonusPerGem ?? 5;
+                
+                if (m_CurrentTurnGemsCleared > comboThreshold)
                 {
-                    comboBonus = (m_CurrentTurnGemsCleared - 3) * 5;
+                    comboBonus = (m_CurrentTurnGemsCleared - comboThreshold) * comboBonusPerGem;
                 }
                 
                 int totalDamage = baseDamage + comboBonus;
@@ -3444,11 +3501,15 @@ namespace Match3
                 
                 Debug.Log($"敵人剩餘血量: {m_EnemyHealth}");
                 
+                // 更新UI
+                UpdateCombatUI();
+                
                 // 檢查戰鬥結果
                 if (m_EnemyHealth <= 0)
                 {
                     Debug.Log("敵人被擊敗！戰鬥勝利！");
                     m_IsCombatMode = false;
+                    OnCombatEnded?.Invoke(true); // 勝利
                 }
                 else
                 {
@@ -3456,7 +3517,12 @@ namespace Match3
                     m_IsPlayerTurn = false;
                     m_EnemyTurnTimer = 0f;
                     Debug.Log("玩家回合結束，輪到敵人回合");
+                    UpdateCombatUI();
                 }
+                
+                // 重置本回合寶石消除計數
+                m_CurrentTurnGemsCleared = 0;
+                m_HasCalculatedDamageThisTurn = true;
             }
             else
             {
@@ -3464,11 +3530,12 @@ namespace Match3
                 // 即使沒有傷害，也要切換到敵人回合
                 m_IsPlayerTurn = false;
                 m_EnemyTurnTimer = 0f;
+                m_HasCalculatedDamageThisTurn = true; // 標記已計算（即使為0）
                 Debug.Log("玩家回合結束，輪到敵人回合");
+                
+                // 更新UI
+                UpdateCombatUI();
             }
-            
-            // 重置本回合寶石消除計數
-            m_CurrentTurnGemsCleared = 0;
         }
 
     }
