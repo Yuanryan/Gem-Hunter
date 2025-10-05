@@ -65,6 +65,11 @@ namespace Match3
         private VisualElement m_GemGoalContent;
         private Label m_MoveCounter;
         private Label m_LevelName;
+        
+        // 拖拽時間條相關
+        private VisualElement m_DragTimerContainer;
+        private VisualElement m_DragTimerBar;
+        private Label m_DragTimerLabel;
 
         private VisualElement m_BottomBarRoot;
 
@@ -145,6 +150,24 @@ namespace Match3
             
             m_GemGoalContent = m_Document.rootVisualElement.Q<VisualElement>("GoalContainer");
             m_MoveCounter = m_Document.rootVisualElement.Q<Label>("MoveCounter");
+            
+            // 初始化拖拽時間條 - 使用Q方法查找
+            m_DragTimerContainer = m_Document.rootVisualElement.Q<VisualElement>("DragTimerContainer");
+            m_DragTimerBar = m_Document.rootVisualElement.Q<VisualElement>("DragTimerBar");
+            m_DragTimerLabel = m_Document.rootVisualElement.Q<Label>("DragTimerLabel");
+            
+            // 調試：檢查是否找到時間條元素
+            if (m_DragTimerContainer == null)
+            {
+                Debug.LogWarning("找不到 DragTimerContainer，將使用程序化創建");
+                CreateDragTimerProgrammatically();
+            }
+            else
+            {
+                Debug.Log("成功找到 DragTimerContainer");
+                // 確保初始狀態是隱藏的
+                m_DragTimerContainer.style.display = DisplayStyle.None;
+            }
             
             m_EndTitleContent = m_Document.rootVisualElement.Q<VisualElement>("EndTitleContent");
             m_WinTitle = m_EndTitleContent.Q<VisualElement>("WinTitle");
@@ -724,6 +747,98 @@ namespace Match3
             
                 m_CharacterAnimator.SetTrigger(trigger);
             }
+        }
+
+        // 程序化創建時間條（備用方案）
+        void CreateDragTimerProgrammatically()
+        {
+            Debug.Log("使用程序化創建時間條");
+            
+             // 創建時間條容器
+             m_DragTimerContainer = new VisualElement();
+             m_DragTimerContainer.name = "DragTimerContainer";
+             m_DragTimerContainer.style.position = Position.Absolute;
+             m_DragTimerContainer.style.top = 50;
+             m_DragTimerContainer.style.right = 250;
+             m_DragTimerContainer.style.width = 1200;
+             m_DragTimerContainer.style.height = 100;
+             m_DragTimerContainer.style.backgroundColor = new Color(1, 0, 0, 0.8f); // 改為紅色，更容易看到
+             m_DragTimerContainer.style.paddingLeft = 10;
+             m_DragTimerContainer.style.paddingRight = 10;
+             m_DragTimerContainer.style.paddingTop = 5;
+             m_DragTimerContainer.style.paddingBottom = 5;
+             m_DragTimerContainer.style.flexDirection = FlexDirection.Row;
+             m_DragTimerContainer.style.alignItems = Align.Center;
+             m_DragTimerContainer.style.display = DisplayStyle.None;
+             
+             Debug.Log($"時間條容器創建完成，位置: top={m_DragTimerContainer.style.top}, right={m_DragTimerContainer.style.right}");
+
+            // 創建時間條背景
+            var timerBackground = new VisualElement();
+            timerBackground.style.width = Length.Percent(100);
+            timerBackground.style.height = 100;
+            timerBackground.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+             // 創建時間條進度
+             m_DragTimerBar = new VisualElement();
+             m_DragTimerBar.name = "DragTimerBar";
+             m_DragTimerBar.style.width = Length.Percent(100);
+             m_DragTimerBar.style.height = 100;
+             m_DragTimerBar.style.backgroundColor = new Color(0, 1, 0, 1f); // 改為亮綠色，更容易看到
+
+
+            // 組裝UI元素
+            timerBackground.Add(m_DragTimerBar);
+            m_DragTimerContainer.Add(timerBackground);
+
+             // 添加到根元素
+             m_Document.rootVisualElement.Add(m_DragTimerContainer);
+             m_DragTimerContainer.style.display = DisplayStyle.Flex;
+
+        }
+
+        // 拖拽時間條控制方法
+        public void ShowDragTimer()
+        {
+            if (m_DragTimerContainer != null)
+            {
+                m_DragTimerContainer.style.display = DisplayStyle.Flex;
+                Debug.Log("顯示時間條");
+            }
+            else
+            {
+                Debug.LogWarning("時間條容器為 null，無法顯示");
+            }
+        }
+
+        public void HideDragTimer()
+        {
+            if (m_DragTimerContainer != null)
+            {
+                m_DragTimerContainer.style.display = DisplayStyle.None;
+            }
+        }
+
+        public void UpdateDragTimer(float remainingTime, float maxTime)
+        {
+            if (m_DragTimerBar == null)
+                return;
+
+            // 更新進度條
+            float progress = remainingTime / maxTime;
+            m_DragTimerBar.style.width = Length.Percent(progress * 100);
+
+            // 更新顏色（最後1秒變紅色）
+            if (remainingTime <= 1.0f)
+            {
+                m_DragTimerBar.style.backgroundColor = new Color(0.8f, 0.2f, 0.2f, 1f);
+            }
+            else
+            {
+                m_DragTimerBar.style.backgroundColor = new Color(0, 1, 0, 1f); // 亮綠色
+            }
+
+            
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

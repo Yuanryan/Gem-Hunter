@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd">
+
+    <!-- 拖拽時間條容器 -->
+    <ui:VisualElement name="DragTimerContainer" class="drag-timer-container">
+        <!-- 時間條背景 -->
+        <ui:VisualElement name="DragTimerBackground" class="drag-timer-background">
+            <!-- 時間條進度 -->
+            <ui:VisualElement name="DragTimerBar" class="drag-timer-bar" />
+        </ui:VisualElement>
+        <!-- 時間標籤 -->
+        <ui:Label name="DragTimerLabel" class="drag-timer-label" text="5.0s" />
+    </ui:VisualElement>
+
+</engine:UXML>
+
