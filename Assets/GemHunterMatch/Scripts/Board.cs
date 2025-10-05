@@ -1548,9 +1548,16 @@ namespace Match3
 
         bool IsAdjacentCell(Vector3Int fromCell, Vector3Int toCell)
         {
-            // 檢查兩個格子是否相鄰（上下左右）
+            // 檢查兩個格子是否相鄰（包括對角線）
             Vector3Int diff = toCell - fromCell;
-            return Mathf.Abs(diff.x) + Mathf.Abs(diff.y) == 1;
+            
+            // 允許上下左右相鄰 (曼哈頓距離 = 1)
+            bool orthogonalAdjacent = Mathf.Abs(diff.x) + Mathf.Abs(diff.y) == 1;
+            
+            // 允許對角線相鄰 (歐幾里得距離 = √2，即 x 和 y 都為 ±1)
+            bool diagonalAdjacent = Mathf.Abs(diff.x) == 1 && Mathf.Abs(diff.y) == 1;
+            
+            return orthogonalAdjacent || diagonalAdjacent;
         }
 
         void PerformRealtimeSwap(Vector3Int fromCell, Vector3Int toCell)
@@ -1562,6 +1569,10 @@ namespace Match3
             CellContent[fromCell].ContainingGem = toGem;
             CellContent[toCell].ContainingGem = fromGem;
 
+            // 檢查是否為對角線交換
+            Vector3Int diff = toCell - fromCell;
+            bool isDiagonalSwap = Mathf.Abs(diff.x) == 1 && Mathf.Abs(diff.y) == 1;
+            
             // 更新寶石狀態 - 確保所有寶石都正確"放置"到棋盤上
             if (fromGem != null)
             {
@@ -1572,6 +1583,16 @@ namespace Match3
                 if (fromGem != m_DraggedGem)
                 {
                     fromGem.transform.position = m_Grid.GetCellCenterWorld(toCell);
+                    
+                    // 為對角線交換調整速度倍數（與下落系統保持一致）
+                    if (isDiagonalSwap)
+                    {
+                        fromGem.SpeedMultiplier = 1.41421356237f; // √2
+                    }
+                    else
+                    {
+                        fromGem.SpeedMultiplier = 1.0f;
+                    }
                 }
                 
                 // 確保寶石狀態正確
@@ -1590,6 +1611,16 @@ namespace Match3
                 if (toGem != m_DraggedGem)
                 {
                     toGem.transform.position = m_Grid.GetCellCenterWorld(fromCell);
+                    
+                    // 為對角線交換調整速度倍數（與下落系統保持一致）
+                    if (isDiagonalSwap)
+                    {
+                        toGem.SpeedMultiplier = 1.41421356237f; // √2
+                    }
+                    else
+                    {
+                        toGem.SpeedMultiplier = 1.0f;
+                    }
                 }
                 
                 // 確保寶石狀態正確
