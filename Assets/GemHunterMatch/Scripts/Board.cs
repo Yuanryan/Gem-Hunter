@@ -175,7 +175,15 @@ namespace Match3
 
         private BonusItem m_ActivatedBonus;
 
-
+        // 回合制戰鬥系統相關變數
+        private int m_CurrentTurnGemsCleared = 0;
+        private bool m_IsPlayerTurn = true;
+        private int m_PlayerHealth = 100;
+        private int m_EnemyHealth = 100;
+        private bool m_IsCombatMode = true; // 是否處於戰鬥模式
+        private float m_EnemyTurnTimer = 0f;
+        private const float ENEMY_TURN_DURATION = 2f; // 敵人回合持續時間
+        private bool m_HasCalculatedDamageThisTurn = false; // 本回合是否已計算傷害
 
         private VisualEffect m_GemHoldVFXInstance;
 
@@ -953,7 +961,11 @@ namespace Match3
 
                 return;
 
-            
+            // 處理回合制戰鬥系統
+            if (m_IsCombatMode)
+            {
+                HandleCombatTurn();
+            }
 
             GameManager.Instance.PoolSystem.Update();
 
@@ -1670,6 +1682,12 @@ namespace Match3
 
 
                         match.DeletedCount += 1;
+                        
+                        // 計算傷害：每消除一個寶石增加傷害計數
+                        if (m_IsPlayerTurn)
+                        {
+                            m_CurrentTurnGemsCleared++;
+                        }
 
                         //we only spawn coins for non bonus match
 
@@ -1778,6 +1796,12 @@ namespace Match3
 
                 }
 
+            }
+            
+            // 當所有匹配都完成且是玩家回合時，計算傷害
+            if (m_TickingMatch.Count == 0 && m_IsPlayerTurn && m_IsCombatMode && !m_HasCalculatedDamageThisTurn)
+            {
+                CalculateAndLogDamage();
             }
 
         }
@@ -2633,6 +2657,10 @@ namespace Match3
             if (!m_InputEnabled)
 
                 return;
+            
+            // 在戰鬥模式下，只有玩家回合時才能進行輸入
+            if (m_IsCombatMode && !m_IsPlayerTurn)
+                return;
 
             
 
@@ -3339,6 +3367,108 @@ namespace Match3
 
             m_PickedSwap = Random.Range(0, m_PossibleSwaps.Count);
 
+        }
+
+        // 處理回合制戰鬥系統
+        void HandleCombatTurn()
+        {
+            if (!m_IsPlayerTurn)
+            {
+                // 敵人回合
+                m_EnemyTurnTimer += Time.deltaTime;
+                
+                if (m_EnemyTurnTimer >= ENEMY_TURN_DURATION)
+                {
+                    // 敵人回合結束，執行敵人行動
+                    ExecuteEnemyTurn();
+                    
+                    // 切換到玩家回合
+                    m_IsPlayerTurn = true;
+                    m_EnemyTurnTimer = 0f;
+                    m_HasCalculatedDamageThisTurn = false; // 重置傷害計算標記
+                    
+                    Debug.Log("敵人回合結束，輪到玩家回合");
+                }
+            }
+        }
+
+        // 執行敵人回合
+        void ExecuteEnemyTurn()
+        {
+            // 敵人對玩家造成隨機傷害
+            int enemyDamage = Random.Range(5, 15);
+            m_PlayerHealth -= enemyDamage;
+            if (m_PlayerHealth < 0) m_PlayerHealth = 0;
+            
+            Debug.Log($"敵人攻擊！造成 {enemyDamage} 點傷害");
+            Debug.Log($"玩家剩餘血量: {m_PlayerHealth}");
+            
+            // 檢查玩家是否被擊敗
+            if (m_PlayerHealth <= 0)
+            {
+                Debug.Log("玩家被擊敗！戰鬥失敗！");
+                m_IsCombatMode = false;
+            }
+        }
+
+        // 計算並記錄傷害輸出
+        void CalculateAndLogDamage()
+        {
+            // 防止重複計算
+            if (m_HasCalculatedDamageThisTurn)
+                return;
+                
+            m_HasCalculatedDamageThisTurn = true;
+            
+            if (m_CurrentTurnGemsCleared > 0)
+            {
+                // 基礎傷害計算：每消除一個寶石造成10點傷害
+                int baseDamage = m_CurrentTurnGemsCleared * 10;
+                
+                // 連擊加成：如果消除超過3個寶石，每多一個增加5點傷害
+                int comboBonus = 0;
+                if (m_CurrentTurnGemsCleared > 3)
+                {
+                    comboBonus = (m_CurrentTurnGemsCleared - 3) * 5;
+                }
+                
+                int totalDamage = baseDamage + comboBonus;
+                
+                // 記錄傷害輸出
+                Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared}");
+                Debug.Log($"基礎傷害: {baseDamage}, 連擊加成: {comboBonus}, 總傷害: {totalDamage}");
+                
+                // 對敵人造成傷害
+                m_EnemyHealth -= totalDamage;
+                if (m_EnemyHealth < 0) m_EnemyHealth = 0;
+                
+                Debug.Log($"敵人剩餘血量: {m_EnemyHealth}");
+                
+                // 檢查戰鬥結果
+                if (m_EnemyHealth <= 0)
+                {
+                    Debug.Log("敵人被擊敗！戰鬥勝利！");
+                    m_IsCombatMode = false;
+                }
+                else
+                {
+                    // 切換到敵人回合
+                    m_IsPlayerTurn = false;
+                    m_EnemyTurnTimer = 0f;
+                    Debug.Log("玩家回合結束，輪到敵人回合");
+                }
+            }
+            else
+            {
+                Debug.Log("本回合沒有消除任何寶石，無傷害輸出");
+                // 即使沒有傷害，也要切換到敵人回合
+                m_IsPlayerTurn = false;
+                m_EnemyTurnTimer = 0f;
+                Debug.Log("玩家回合結束，輪到敵人回合");
+            }
+            
+            // 重置本回合寶石消除計數
+            m_CurrentTurnGemsCleared = 0;
         }
 
     }
