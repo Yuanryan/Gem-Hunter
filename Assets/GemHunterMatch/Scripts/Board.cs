@@ -77,9 +77,15 @@ namespace Match3
         private bool m_SwipeQueued;
         private Vector3Int m_StartSwipe;
         private Vector3Int m_EndSwipe;
-        //private bool m_IsHoldingTouch;
-
+        
+        // 轉珠系統相關變數
+        private bool m_IsDragging = false;
+        private Vector3Int m_DraggedGemCell;
+        private Gem m_DraggedGem;
+        private Vector3 m_DragOffset;
+        private Vector3Int m_LastDragCell;
         private float m_LastClickTime = 0.0f;
+        private List<Vector3Int> m_SwapHistory = new List<Vector3Int>(); // 記錄交換歷史
 
         private BonusItem m_ActivatedBonus;
 
@@ -1315,6 +1321,7 @@ namespace Match3
         
             var pressedThisFrame = GameManager.Instance.ClickAction.WasPressedThisFrame();
             var releasedThisFrame = GameManager.Instance.ClickAction.WasReleasedThisFrame();
+            var isPressed = GameManager.Instance.ClickAction.IsPressed();
         
             var clickPos = GameManager.Instance.ClickPosition.ReadValue<Vector2>();
             var worldPos = mainCam.ScreenToWorldPoint(clickPos);
@@ -1334,11 +1341,11 @@ namespace Match3
                     if (UIHandler.Instance.SelectedDebugGem != null)
                     {
                         var clickedCell = m_Grid.WorldToCell(Camera.main.ScreenToWorldPoint(clickPos));
-                        if (CellContent.TryGetValue(clickedCell, out var cellContent))
+                        if (CellContent.TryGetValue(clickedCell, out var debugCellContent))
                         {
-                            if (cellContent.ContainingGem != null)
+                            if (debugCellContent.ContainingGem != null)
                             {
-                                Destroy(cellContent.ContainingGem.gameObject);
+                                Destroy(debugCellContent.ContainingGem.gameObject);
                             }
 
                             NewGemAt(clickedCell, UIHandler.Instance.SelectedDebugGem);
@@ -1365,117 +1372,296 @@ namespace Match3
                 var worldStart = mainCam.ScreenToWorldPoint(m_StartClickPosition);
                 var startCell = m_Grid.WorldToCell(worldStart);
 
-                if (CellContent.ContainsKey(startCell))
+                // 檢查是否點擊在有效的寶石上
+                if (CellContent.TryGetValue(startCell, out var cellContent) && 
+                    cellContent.ContainingGem != null && 
+                    cellContent.CanBeMoved)
                 {
-                    if (m_GemHoldVFXInstance != null)
-                    {
-                        m_GemHoldVFXInstance.transform.position = m_Grid.GetCellCenterWorld(startCell);
-                        m_GemHoldVFXInstance.gameObject.SetActive(true);
-                    }
-
-                    if (m_HoldTrailInstance)
-                    {
-                        m_HoldTrailInstance.transform.position = worldPos;
-                        m_HoldTrailInstance.gameObject.SetActive(true);
-                    }
+                    // 開始拖拽
+                    StartDragging(startCell, cellContent.ContainingGem, worldPos);
                 }
+            }
+            else if (isPressed && m_IsDragging)
+            {
+                // 持續拖拽中
+                UpdateDragging(worldPos);
+            }
+            else if (releasedThisFrame && m_IsDragging)
+            {
+                // 結束拖拽
+                EndDragging();
             }
             else if (releasedThisFrame)
             {
-                //m_IsHoldingTouch = false;
-                if(m_GemHoldVFXInstance != null) m_GemHoldVFXInstance.gameObject.SetActive(false);
-                if(m_HoldTrailInstance != null) m_HoldTrailInstance.gameObject.SetActive(false);
-                
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (UIHandler.Instance.DebugMenuOpen)
-                {
-                    return;
-                }
-#endif
-                //early exit if we already have a swipe queued or in progress, only one can happen at once
-                if (m_SwipeQueued || m_SwapStage != SwapStage.None)
-                    return;
-                
-                float clickDelta = Time.time - m_LastClickTime;
-                m_LastClickTime = Time.time;
-
-                var worldStart = mainCam.ScreenToWorldPoint(m_StartClickPosition);
-                var startCell = m_Grid.WorldToCell(worldStart);
-                startCell.z = 0;
-            
-                //if last than .3 second since last click, this is a double click, activate the gem if that is a gem.
-                if (clickDelta < 0.3f)
-                {
-                    if (CellContent.TryGetValue(startCell, out var content) 
-                        && content.ContainingGem != null 
-                        && content.ContainingGem.Usable
-                        && content.ContainingGem.CurrentMatch == null)
-                    {
-                        content.ContainingGem.Use(null);
-                        return;
-                    }
-                }
-
-                var endWorldPos = mainCam.ScreenToWorldPoint(clickPos);
-            
-                //we compute the swipe in world position as then a swipe of 1 is the distance between 2 cell
-                var swipe = endWorldPos - worldStart;
-                if (swipe.sqrMagnitude < 0.5f * 0.5f)
-                {
-                    return;
-                }
-
-                //the starting cell isn't a valid cell, so we exit
-                if (!CellContent.TryGetValue(startCell, out var startCellContent) 
-                    || !startCellContent.CanBeMoved)
-                {
-                    return;
-                }
-
-                var endCell = startCell;
-            
-                if (Mathf.Abs(swipe.x) > Mathf.Abs(swipe.y))
-                {
-                    if (swipe.x < 0)
-                    {
-                        endCell += Vector3Int.left;
-                    }
-                    else
-                    {
-                        endCell += Vector3Int.right;
-                    }
-                }
-                else
-                {
-                    if (swipe.y > 0)
-                    {
-                        endCell += Vector3Int.up;
-                    }
-                    else
-                    {
-                        endCell += Vector3Int.down;
-                    }
-                }
-
-                //the ending cell isn't a valid cell, exit
-                if (!CellContent.TryGetValue(endCell, out var endCellContent) || !endCellContent.CanBeMoved)
-                    return;
-                
-                //both work so we lock them so they cannot be deleted or moved until the swap end
-                startCellContent.Locked = true;
-                endCellContent.Locked = true;
-                
-                //we make sure to remove those cell from the ticking cell if they are in (we swipped as it was falling)
-
-                m_SwipeQueued = true;
-                m_StartSwipe = startCell;
-                m_EndSwipe = endCell;
+                // 處理雙擊
+                HandleDoubleClick(mainCam, clickPos);
             }
         }
 
         public void ActivateBonusItem(BonusItem item)
         {
             m_ActivatedBonus = item;
+        }
+
+        // 轉珠系統方法
+        void StartDragging(Vector3Int cell, Gem gem, Vector3 worldPos)
+        {
+            m_IsDragging = true;
+            m_DraggedGemCell = cell;
+            m_DraggedGem = gem;
+            m_LastDragCell = cell;
+            
+            // 清空交換歷史
+            m_SwapHistory.Clear();
+            m_SwapHistory.Add(cell); // 記錄起始位置
+            
+            // 計算拖拽偏移量
+            m_DragOffset = gem.transform.position - worldPos;
+            
+            // 顯示拖拽特效
+                    if (m_GemHoldVFXInstance != null)
+                    {
+                m_GemHoldVFXInstance.transform.position = m_Grid.GetCellCenterWorld(cell);
+                        m_GemHoldVFXInstance.gameObject.SetActive(true);
+                    }
+
+            if (m_HoldTrailInstance != null)
+                    {
+                        m_HoldTrailInstance.transform.position = worldPos;
+                        m_HoldTrailInstance.gameObject.SetActive(true);
+                    }
+                }
+
+        void UpdateDragging(Vector3 worldPos)
+        {
+            if (!m_IsDragging || m_DraggedGem == null)
+                return;
+
+            // 更新被拖拽寶石的位置
+            Vector3 targetPos = worldPos + m_DragOffset;
+            m_DraggedGem.transform.position = targetPos;
+            
+            // 更新拖拽軌跡
+            if (m_HoldTrailInstance != null)
+            {
+                m_HoldTrailInstance.transform.position = worldPos;
+            }
+
+            // 檢查是否移動到新的格子
+            Vector3Int currentCell = m_Grid.WorldToCell(targetPos);
+            if (currentCell != m_LastDragCell)
+            {
+                // 檢查新格子是否有效且相鄰
+                if (IsValidDragTarget(currentCell) && IsAdjacentCell(m_LastDragCell, currentCell))
+                {
+                    // 執行即時交換
+                    PerformRealtimeSwap(m_LastDragCell, currentCell);
+                    
+                    // 更新狀態
+                    m_LastDragCell = currentCell;
+                    
+                    // 記錄交換歷史，但避免重複記錄
+                    if (!m_SwapHistory.Contains(currentCell))
+                    {
+                        m_SwapHistory.Add(currentCell);
+                    }
+                    
+                    // 更新拖拽特效位置
+                    if (m_GemHoldVFXInstance != null)
+                    {
+                        m_GemHoldVFXInstance.transform.position = m_Grid.GetCellCenterWorld(currentCell);
+                    }
+                }
+            }
+            
+            // 確保所有非拖拽寶石都在正確位置
+            EnsureNonDraggedGemsAreInCorrectPositions();
+        }
+
+        void EndDragging()
+        {
+            if (!m_IsDragging)
+                    return;
+                
+            // 隱藏特效
+            if (m_GemHoldVFXInstance != null)
+                m_GemHoldVFXInstance.gameObject.SetActive(false);
+            if (m_HoldTrailInstance != null)
+                m_HoldTrailInstance.gameObject.SetActive(false);
+
+            // 確保被拖拽的寶石正確"放置"到棋盤上
+            if (m_DraggedGem != null)
+            {
+                // 將被拖拽的寶石放到當前格子的中心位置
+                Vector3Int finalCell = m_Grid.WorldToCell(m_DraggedGem.transform.position);
+                if (CellContent.TryGetValue(finalCell, out var finalCellContent))
+                {
+                    m_DraggedGem.transform.position = m_Grid.GetCellCenterWorld(finalCell);
+                    
+                    // 確保寶石狀態正確，可以被匹配和移動
+                    if (m_DraggedGem.CurrentState != Gem.State.Still)
+                    {
+                        m_DraggedGem.StopBouncing();
+                    }
+                    
+                    // 確保寶石的索引是最新的
+                    m_DraggedGem.MoveTo(finalCell);
+                }
+            }
+
+            // 檢查是否有任何交換發生
+            if (m_SwapHistory.Count > 1)
+            {
+                // 有交換發生，檢查最終狀態是否有匹配
+                CheckFinalMatches();
+                
+                // 消耗移動次數
+                LevelData.Instance.Moved();
+            }
+            else
+            {
+                // 沒有交換，寶石回到原位置
+                if (m_DraggedGem != null)
+                {
+                    m_DraggedGem.transform.position = m_Grid.GetCellCenterWorld(m_DraggedGemCell);
+                }
+            }
+
+            // 清理交換歷史（不再需要解鎖，因為我們沒有鎖定格子）
+            // 這樣可以支持回頭拖拽
+            
+            // 重置拖拽狀態
+            m_IsDragging = false;
+            m_DraggedGem = null;
+            m_DraggedGemCell = Vector3Int.zero;
+            m_LastDragCell = Vector3Int.zero;
+            m_SwapHistory.Clear();
+        }
+
+        bool IsValidDragTarget(Vector3Int targetCell)
+        {
+            // 檢查目標格子是否存在且可以移動
+            // 允許與之前交換過的格子再次交換（回頭拖拽）
+            return CellContent.TryGetValue(targetCell, out var cellContent) && 
+                   cellContent.CanBeMoved;
+        }
+
+        bool IsAdjacentCell(Vector3Int fromCell, Vector3Int toCell)
+        {
+            // 檢查兩個格子是否相鄰（上下左右）
+            Vector3Int diff = toCell - fromCell;
+            return Mathf.Abs(diff.x) + Mathf.Abs(diff.y) == 1;
+        }
+
+        void PerformRealtimeSwap(Vector3Int fromCell, Vector3Int toCell)
+        {
+            // 執行交換
+            var fromGem = CellContent[fromCell].ContainingGem;
+            var toGem = CellContent[toCell].ContainingGem;
+
+            CellContent[fromCell].ContainingGem = toGem;
+            CellContent[toCell].ContainingGem = fromGem;
+
+            // 更新寶石狀態 - 確保所有寶石都正確"放置"到棋盤上
+            if (fromGem != null)
+            {
+                // 更新寶石的索引，確保它知道自己在哪個格子
+                fromGem.MoveTo(toCell);
+                
+                // 如果這不是被拖拽的寶石，設置正確的位置
+                if (fromGem != m_DraggedGem)
+                {
+                    fromGem.transform.position = m_Grid.GetCellCenterWorld(toCell);
+                }
+                
+                // 確保寶石狀態正確
+                if (fromGem.CurrentState != Gem.State.Still)
+                {
+                    fromGem.StopBouncing();
+                }
+            }
+            
+            if (toGem != null)
+            {
+                // 更新寶石的索引，確保它知道自己在哪個格子
+                toGem.MoveTo(fromCell);
+                
+                // 如果這不是被拖拽的寶石，設置正確的位置
+                if (toGem != m_DraggedGem)
+                {
+                    toGem.transform.position = m_Grid.GetCellCenterWorld(fromCell);
+                }
+                
+                // 確保寶石狀態正確
+                if (toGem.CurrentState != Gem.State.Still)
+                {
+                    toGem.StopBouncing();
+                }
+            }
+
+            // 播放交換音效
+            GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.SwipSound);
+        }
+
+        void CheckFinalMatches()
+        {
+            // 檢查所有交換過的格子是否有匹配
+            foreach (var cell in m_SwapHistory)
+            {
+                if (CellContent.TryGetValue(cell, out var cellContent) && cellContent.ContainingGem != null)
+                {
+                    DoCheck(cell);
+                }
+            }
+        }
+
+        void EnsureNonDraggedGemsAreInCorrectPositions()
+        {
+            // 確保所有非拖拽寶石都在正確的格子中心位置且狀態正確
+            foreach (var cell in m_SwapHistory)
+            {
+                if (CellContent.TryGetValue(cell, out var cellContent) && cellContent.ContainingGem != null)
+                {
+                    // 如果不是被拖拽的寶石，確保它在格子中心且狀態正確
+                    if (cellContent.ContainingGem != m_DraggedGem)
+                    {
+                        cellContent.ContainingGem.transform.position = m_Grid.GetCellCenterWorld(cell);
+                        
+                        // 確保寶石狀態正確，可以被匹配和移動
+                        if (cellContent.ContainingGem.CurrentState != Gem.State.Still)
+                        {
+                            cellContent.ContainingGem.StopBouncing();
+                        }
+                        
+                        // 確保寶石的索引是最新的
+                        cellContent.ContainingGem.MoveTo(cell);
+                    }
+                }
+            }
+        }
+
+
+        void HandleDoubleClick(Camera mainCam, Vector2 clickPos)
+        {
+            float clickDelta = Time.time - m_LastClickTime;
+            m_LastClickTime = Time.time;
+
+            var worldStart = mainCam.ScreenToWorldPoint(m_StartClickPosition);
+            var startCell = m_Grid.WorldToCell(worldStart);
+            startCell.z = 0;
+
+            // 雙擊檢查
+            if (clickDelta < 0.3f)
+            {
+                if (CellContent.TryGetValue(startCell, out var content) 
+                    && content.ContainingGem != null 
+                    && content.ContainingGem.Usable
+                    && content.ContainingGem.CurrentMatch == null)
+                {
+                    content.ContainingGem.Use(null);
+                    return;
+                }
+            }
         }
 
         void FindAllPossibleMatch()
