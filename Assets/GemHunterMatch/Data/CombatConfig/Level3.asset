@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 06e20438ddbe18f459167564170c85c8, type: 3}
-  m_Name: Level1
+  m_Name: Level3
   m_EditorClassIdentifier: Assembly-CSharp::Match3.CombatConfig
   PlayerMaxHealth: 100
-  EnemyMaxHealth: 5
+  EnemyMaxHealth: 1000
   BaseDamagePerGem: 3
   ComboThreshold: 3
   ComboBonusPerGem: 2
   EnemyTurnDuration: 2
-  EnemyMinDamage: 5
-  EnemyMaxDamage: 10
+  EnemyMinDamage: 100
+  EnemyMaxDamage: 100
   ShowCombatUI: 1
   UIPosition: 0
   UIOpacity: 0.8

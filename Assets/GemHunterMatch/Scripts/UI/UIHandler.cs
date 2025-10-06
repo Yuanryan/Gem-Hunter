@@ -182,22 +182,81 @@ namespace Match3
             m_CharacterPortrait = m_Document.rootVisualElement.Q<VisualElement>("MiddleTopSection");
 
             var playAgainButton = m_Document.rootVisualElement.Q<Button>("ReplayButton");
-            playAgainButton.clicked += () =>
+            if (playAgainButton != null)
             {
-                FadeOut(() =>
+                Debug.Log("找到 ReplayButton，綁定事件");
+                Debug.Log($"ReplayButton 位置: {playAgainButton.layout}");
+                Debug.Log($"ReplayButton 是否啟用: {playAgainButton.enabledSelf}");
+                Debug.Log($"ReplayButton 顯示狀態: {playAgainButton.style.display.value}");
+                
+                // 添加多種事件監聽器
+                playAgainButton.clicked += () =>
                 {
-                    SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+                    Debug.Log("ReplayButton clicked 事件觸發");
+                    // 淡出戰鬥UI
+                    var combatUIController = FindObjectOfType<CombatUIController>();
+                    if (combatUIController != null)
+                    {
+                        combatUIController.ShowCombatUI(false);
+                    }
+                    FadeOut(() =>
+                    {
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+                    });
+                };
+                
+                playAgainButton.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    Debug.Log("ReplayButton MouseDown 事件觸發");
                 });
-            };
+                
+                playAgainButton.RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    Debug.Log("ReplayButton MouseUp 事件觸發");
+                });
+                
+                playAgainButton.RegisterCallback<PointerDownEvent>(evt =>
+                {
+                    Debug.Log("ReplayButton PointerDown 事件觸發");
+                });
+            }
+            else
+            {
+                Debug.LogError("找不到 ReplayButton");
+            }
 
             var exitButton = m_Document.rootVisualElement.Q<Button>("SelectLevelButton");
-            exitButton.clicked += () =>
+            if (exitButton != null)
             {
-                FadeOut(() =>
+                Debug.Log("找到 SelectLevelButton，綁定事件");
+                Debug.Log($"SelectLevelButton 位置: {exitButton.layout}");
+                Debug.Log($"SelectLevelButton 是否啟用: {exitButton.enabledSelf}");
+                Debug.Log($"SelectLevelButton 顯示狀態: {exitButton.style.display.value}");
+                
+                exitButton.clicked += () =>
                 {
-                    SceneManager.LoadScene(1, LoadSceneMode.Single); 
+                    Debug.Log("SelectLevelButton clicked 事件觸發");
+                    // 淡出戰鬥UI
+                    var combatUIController = FindObjectOfType<CombatUIController>();
+                    if (combatUIController != null)
+                    {
+                        combatUIController.ShowCombatUI(false);
+                    }
+                    FadeOut(() =>
+                    {
+                        SceneManager.LoadScene(1, LoadSceneMode.Single); 
+                    });
+                };
+                
+                exitButton.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    Debug.Log("SelectLevelButton MouseDown 事件觸發");
                 });
-            };
+            }
+            else
+            {
+                Debug.LogError("找不到 SelectLevelButton");
+            }
             
             m_PortraitTarget = m_Document.rootVisualElement.Q<Image>("RenderTarget");
             m_PortraitTarget.scaleMode = ScaleMode.ScaleToFit;
@@ -264,10 +323,28 @@ namespace Match3
             // Shop
         
             var shopButton = m_Document.rootVisualElement.Q<Button>("ShopButton");
-            shopButton.clicked += () =>
+            if (shopButton != null)
             {
-                ShowShop(true);
-            };
+                Debug.Log("找到 ShopButton，綁定事件");
+                Debug.Log($"ShopButton 位置: {shopButton.layout}");
+                Debug.Log($"ShopButton 是否啟用: {shopButton.enabledSelf}");
+                Debug.Log($"ShopButton 顯示狀態: {shopButton.style.display.value}");
+                
+                shopButton.clicked += () =>
+                {
+                    Debug.Log("ShopButton clicked 事件觸發");
+                    ShowShop(true);
+                };
+                
+                shopButton.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    Debug.Log("ShopButton MouseDown 事件觸發");
+                });
+            }
+            else
+            {
+                Debug.LogError("找不到 ShopButton");
+            }
 
             m_ShopRoot = m_Document.rootVisualElement.Q<VisualElement>("Shop");
             m_ShopScrollView = m_Document.rootVisualElement.Q<ScrollView>("ShopContentScroll");
@@ -318,6 +395,19 @@ namespace Match3
                 m_FadeCallback = null;
             });
             
+            // 添加全局點擊事件監聽器用於調試
+            m_Document.rootVisualElement.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                Debug.Log($"全局 MouseDown 事件在位置: {evt.mousePosition}");
+                Debug.Log($"目標元素: {evt.target}");
+            });
+            
+            m_Document.rootVisualElement.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                Debug.Log($"全局 PointerDown 事件在位置: {evt.position}");
+                Debug.Log($"目標元素: {evt.target}");
+            });
+            
             CreateBottomBar();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -355,6 +445,22 @@ namespace Match3
 
             m_EndTitleContent.style.display = DisplayStyle.None;
             m_EndScreen.style.display = DisplayStyle.None;
+            
+            // 重新初始化 Cover 元素
+            if (m_CoverElement != null)
+            {
+                m_CoverElement.style.opacity = 1.0f;
+                m_CoverElement.style.display = DisplayStyle.Flex;
+                // 恢復原始的過渡時間
+                m_CoverElement.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(2.0f, TimeUnit.Second) });
+            }
+            
+            // 重新初始化 FullContent
+            var fullContent = m_Document.rootVisualElement.Q<VisualElement>("FullContent");
+            if (fullContent != null)
+            {
+                fullContent.style.display = DisplayStyle.Flex;
+            }
             
             //we clear the goal container as when we reload a level, there 
             m_GemGoalContent.Clear();
@@ -437,38 +543,115 @@ namespace Match3
         {
             UpdateTopBarData();
             
-            if (LevelData.Instance.GoalLeft == 0)
-            {
-                ShowWin();
-            }
-            else
-            {
-                ShowLose();
-            }
+            // 勝利條件已改為敵人死亡，由戰鬥系統處理
+            // 這裡只處理失敗情況（步數用完等）
+            ShowLose();
         }
 
-        void ShowWin()
+        public void ShowWin()
         {
             GameManager.Instance.WinTriggered();
             TriggerCharacterAnimation(CharacterAnimation.Win);
+            
+            // 播放敵人死亡動畫
+            var characterAnimations = FindObjectOfType<CharacterAnimationController>();
+            if (characterAnimations != null)
+            {
+                characterAnimations.PlayEnemyDeathAnimation();
+            }
+            
+            // 隱藏主要內容，避免阻擋勝利畫面的按鈕點擊
+            var fullContent = m_Document.rootVisualElement.Q<VisualElement>("FullContent");
+            if (fullContent != null)
+            {
+                fullContent.style.display = DisplayStyle.None;
+            }
+            
+            // 確保 Cover 元素不會阻擋按鈕點擊
+            if (m_CoverElement != null)
+            {
+                m_CoverElement.style.opacity = 0.0f;
+                m_CoverElement.style.display = DisplayStyle.None;
+            }
             
             m_EndTitleContent.style.display = DisplayStyle.Flex;
             m_LoseTitle.style.display = DisplayStyle.None;
             m_WinTitle.style.display = DisplayStyle.Flex;
             m_WinTitle.style.scale = Vector2.one;
+            
+            // 確保標題元素不會阻擋按鈕點擊
+            m_EndTitleContent.pickingMode = PickingMode.Ignore;
+            m_WinTitle.pickingMode = PickingMode.Ignore;
+            
+            // 也為 Title 元素設定 pickingMode
+            var titleElement = m_EndTitleContent.Q<VisualElement>("Title");
+            if (titleElement != null)
+            {
+                titleElement.pickingMode = PickingMode.Ignore;
+            }
 
             StartCoroutine(ShowEndControl(GameManager.Instance.Settings.SoundSettings.WinSound));
         }
 
-        void ShowLose()
+        public void ShowLose()
         {
             GameManager.Instance.LooseTriggered();
             TriggerCharacterAnimation(CharacterAnimation.Lose);
+            
+            // 播放玩家死亡動畫
+            var characterAnimations = FindObjectOfType<CharacterAnimationController>();
+            if (characterAnimations != null)
+            {
+                Debug.Log("UIHandler: 找到 CharacterAnimationController，播放玩家死亡動畫");
+                characterAnimations.PlayPlayerDeathAnimation();
+            }
+            else
+            {
+                Debug.LogWarning("UIHandler: 找不到 CharacterAnimationController！");
+            }
+            
+            // 隱藏主要內容，避免阻擋失敗畫面的按鈕點擊
+            var fullContent = m_Document.rootVisualElement.Q<VisualElement>("FullContent");
+            if (fullContent != null)
+            {
+                fullContent.style.display = DisplayStyle.None;
+            }
+            
+            // 確保 Cover 元素不會阻擋按鈕點擊
+            if (m_CoverElement != null)
+            {
+                m_CoverElement.style.opacity = 0.0f;
+                m_CoverElement.style.display = DisplayStyle.None;
+            }
             
             m_EndTitleContent.style.display = DisplayStyle.Flex;
             m_WinTitle.style.display = DisplayStyle.None;
             m_LoseTitle.style.display = DisplayStyle.Flex;
             m_LoseTitle.style.scale = Vector2.one;
+            
+            // 確保標題元素不會阻擋按鈕點擊
+            m_EndTitleContent.pickingMode = PickingMode.Ignore;
+            m_LoseTitle.pickingMode = PickingMode.Ignore;
+            
+            // 也為 Title 元素設定 pickingMode
+            var titleElement = m_EndTitleContent.Q<VisualElement>("Title");
+            if (titleElement != null)
+            {
+                titleElement.pickingMode = PickingMode.Ignore;
+            }
+            
+            // 額外確保 LoseTitle 不會阻擋點擊事件
+            m_LoseTitle.pickingMode = PickingMode.Ignore;
+            // 限制 LoseTitle 的大小，避免覆蓋按鈕區域
+            m_LoseTitle.style.flexGrow = 0;
+            m_LoseTitle.style.height = Length.Percent(50);
+            
+            // 調試：檢查失敗畫面顯示時的狀態
+            Debug.Log("=== 失敗畫面顯示時的狀態 ===");
+            Debug.Log($"EndTitleContent pickingMode: {m_EndTitleContent.pickingMode}");
+            Debug.Log($"LoseTitle pickingMode: {m_LoseTitle.pickingMode}");
+            Debug.Log($"LoseTitle 顯示狀態: {m_LoseTitle.style.display.value}");
+            Debug.Log($"LoseTitle 位置: {m_LoseTitle.layout}");
 
             StartCoroutine(ShowEndControl(GameManager.Instance.Settings.SoundSettings.LooseSound));
         }
@@ -481,6 +664,47 @@ namespace Match3
             
             UpdateTopBarData();
             m_EndScreen.style.display = DisplayStyle.Flex;
+            
+            // 調試：檢查按鈕在勝利畫面顯示時的狀態
+            Debug.Log("=== 勝利畫面顯示時的按鈕狀態 ===");
+            var replayButton = m_Document.rootVisualElement.Q<Button>("ReplayButton");
+            var selectLevelButton = m_Document.rootVisualElement.Q<Button>("SelectLevelButton");
+            var shopButton = m_Document.rootVisualElement.Q<Button>("ShopButton");
+            
+            if (replayButton != null)
+            {
+                Debug.Log($"ReplayButton 在勝利畫面顯示時的位置: {replayButton.layout}");
+                Debug.Log($"ReplayButton 在勝利畫面顯示時是否啟用: {replayButton.enabledSelf}");
+                Debug.Log($"ReplayButton 在勝利畫面顯示時的顯示狀態: {replayButton.style.display.value}");
+            }
+            
+            if (selectLevelButton != null)
+            {
+                Debug.Log($"SelectLevelButton 在勝利畫面顯示時的位置: {selectLevelButton.layout}");
+                Debug.Log($"SelectLevelButton 在勝利畫面顯示時是否啟用: {selectLevelButton.enabledSelf}");
+                Debug.Log($"SelectLevelButton 在勝利畫面顯示時的顯示狀態: {selectLevelButton.style.display.value}");
+            }
+            
+            if (shopButton != null)
+            {
+                Debug.Log($"ShopButton 在勝利畫面顯示時的位置: {shopButton.layout}");
+                Debug.Log($"ShopButton 在勝利畫面顯示時是否啟用: {shopButton.enabledSelf}");
+                Debug.Log($"ShopButton 在勝利畫面顯示時的顯示狀態: {shopButton.style.display.value}");
+            }
+            
+            // 檢查 EndScreen 的狀態
+            Debug.Log($"EndScreen 顯示狀態: {m_EndScreen.style.display.value}");
+            Debug.Log($"EndScreen 位置: {m_EndScreen.layout}");
+            
+            // 檢查 Cover 元素的狀態
+            if (m_CoverElement != null)
+            {
+                Debug.Log($"Cover 元素透明度: {m_CoverElement.style.opacity.value}");
+                Debug.Log($"Cover 元素顯示狀態: {m_CoverElement.style.display.value}");
+                
+                // 確保 Cover 元素不會接收點擊事件
+                m_CoverElement.style.display = DisplayStyle.None;
+            }
         }
 
         public void ToggleSettingMenu(bool display)
@@ -496,13 +720,19 @@ namespace Match3
 
         public void FadeIn(Action onFadeFinished)
         {
+            // 設定更快的過渡時間用於重新開始和選擇關卡
+            m_CoverElement.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(0.5f, TimeUnit.Second) });
             m_CoverElement.style.opacity = 0.0f;
+            m_CoverElement.style.display = DisplayStyle.Flex; // 確保 Cover 元素在淡入時可見
             m_FadeCallback += onFadeFinished;
         }
 
         public void FadeOut(Action onFadeFinished)
         {
+            // 設定更快的過渡時間用於重新開始和選擇關卡
+            m_CoverElement.style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new TimeValue(0.5f, TimeUnit.Second) });
             m_CoverElement.style.opacity = 1.0f;
+            m_CoverElement.style.display = DisplayStyle.Flex; // 確保 Cover 元素在淡出時可見
             m_FadeCallback += onFadeFinished;
         }
 

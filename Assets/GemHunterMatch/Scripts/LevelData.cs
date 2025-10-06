@@ -93,7 +93,8 @@ namespace Match3
                         if (GoalLeft == 0)
                         {
                             GameManager.Instance.WinStar();
-                            GameManager.Instance.Board.ToggleInput(false);
+                            // 勝利條件已改為敵人死亡，不再鎖定Board
+                            Debug.Log("關卡目標已完成，但勝利條件已改為敵人死亡");
                             OnAllGoalFinished?.Invoke();
                         }
                     }

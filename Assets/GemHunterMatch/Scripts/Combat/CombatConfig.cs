@@ -17,13 +17,13 @@ namespace Match3
         
         [Header("傷害設定")]
         [Tooltip("每個寶石的基礎傷害")]
-        public int BaseDamagePerGem = 10;
+        public int BaseDamagePerGem = 3;
         
         [Tooltip("連擊加成：消除超過此數量的寶石時開始加成")]
         public int ComboThreshold = 3;
         
         [Tooltip("連擊加成：每多一個寶石增加的傷害")]
-        public int ComboBonusPerGem = 5;
+        public int ComboBonusPerGem = 2;
         
         [Header("敵人設定")]
         [Tooltip("敵人回合持續時間（秒）")]

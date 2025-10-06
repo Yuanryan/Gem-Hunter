@@ -342,8 +342,23 @@ namespace Match3
         {
             Debug.Log($"戰鬥結束: {(victory ? "勝利" : "失敗")}");
             
-            // 可以在這裡添加戰鬥結束的UI效果
-            // 例如：顯示勝利/失敗畫面、播放音效等
+            // 禁用Board輸入
+            if (board != null)
+            {
+                board.ToggleInput(false);
+            }
+            
+            // 觸發UI結束畫面
+            if (victory)
+            {
+                // 勝利
+                UIHandler.Instance.ShowWin();
+            }
+            else
+            {
+                // 失敗
+                UIHandler.Instance.ShowLose();
+            }
         }
         
         /// <summary>

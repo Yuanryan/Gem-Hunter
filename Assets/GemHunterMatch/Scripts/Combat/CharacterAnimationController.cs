@@ -19,8 +19,6 @@ namespace Match3
         [Header("動畫狀態")]
         private bool isPlayerAttacking = false;
         private bool isEnemyAttacking = false;
-        private bool isPlayerHurting = false;
-        private bool isEnemyHurting = false;
         
         private void Start()
         {
@@ -241,10 +239,16 @@ namespace Match3
         /// </summary>
         public void PlayPlayerDeathAnimation()
         {
+            Debug.Log("CharacterAnimationController: 嘗試播放玩家死亡動畫");
             if (playerAnimator != null)
             {
+                Debug.Log("CharacterAnimationController: 觸發玩家死亡動畫");
                 playerAnimator.SetTrigger("Death");
                 // 死亡動畫通常不回到閒置狀態
+            }
+            else
+            {
+                Debug.LogWarning("CharacterAnimationController: PlayerAnimator 未設置！");
             }
         }
         

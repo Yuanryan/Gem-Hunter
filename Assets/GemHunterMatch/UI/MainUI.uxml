@@ -54,7 +54,7 @@
             <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="CloseButton" style="position: absolute; right: -32px; top: -40px; background-color: rgba(0, 0, 0, 0); border-left-color: rgba(0, 0, 0, 0); border-right-color: rgba(0, 0, 0, 0); border-top-color: rgba(0, 0, 0, 0); border-bottom-color: rgba(0, 0, 0, 0); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0;" />
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="EndScreen" picking-mode="Ignore" style="flex-grow: 1; display: flex;">
+    <ui:VisualElement name="EndScreen" style="flex-grow: 1; display: flex;">
         <ui:VisualElement name="EndTopBar" style="flex-direction: row;">
             <ui:VisualElement name="VisualElement" class="top-container" style="flex-direction: row; width: 1080px; margin-left: auto; margin-right: auto;">
                 <ui:VisualElement name="CoinContainer" class="top-container" style="flex-grow: 1; width: 30%; padding-left: 5%; padding-right: 1%; padding-top: 4%; padding-bottom: 4%;">
@@ -90,16 +90,16 @@
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="EndTitleContent" picking-mode="Ignore" style="flex-grow: 1; display: flex;">
-        <ui:VisualElement name="Title" picking-mode="Ignore" class="end-title" style="background-color: rgba(0, 0, 0, 0);">
-            <ui:VisualElement name="WinTitle" usage-hints="DynamicTransform" picking-mode="Ignore" class="winlose-title" style="display: none;">
+    <ui:VisualElement name="EndTitleContent" style="flex-grow: 1; display: flex;">
+        <ui:VisualElement name="Title" class="end-title" style="background-color: rgba(0, 0, 0, 0);">
+            <ui:VisualElement name="WinTitle" usage-hints="DynamicTransform" class="winlose-title" style="display: none;">
                 <ui:Label tabindex="-1" text="Victory!" display-tooltip-when-elided="true" picking-mode="Ignore" class="end-title-text" />
             </ui:VisualElement>
-            <ui:VisualElement name="LoseTitle" usage-hints="DynamicTransform" picking-mode="Ignore" class="winlose-title" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: none;">
+            <ui:VisualElement name="LoseTitle" usage-hints="DynamicTransform" class="winlose-title" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: none;">
                 <ui:Label tabindex="-1" text="Defeat" display-tooltip-when-elided="true" picking-mode="Ignore" class="end-title-text" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
     <ui:Instance template="Shop" name="Shop" style="position: absolute; display: flex;" />
-    <ui:VisualElement name="Cover" picking-mode="Ignore" style="opacity: 0; display: flex;" />
+    <ui:VisualElement name="Cover" style="opacity: 0; display: flex;" />
 </ui:UXML>
