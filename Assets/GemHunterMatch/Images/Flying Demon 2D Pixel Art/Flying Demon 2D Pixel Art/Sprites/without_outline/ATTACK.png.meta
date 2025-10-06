@@ -58,7 +58,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -96,7 +96,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -137,12 +137,12 @@ TextureImporter:
       name: ATTACK_0
       rect:
         serializedVersion: 2
-        x: 7
-        y: 1
-        width: 64
-        height: 66
+        x: 0
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -159,12 +159,12 @@ TextureImporter:
       name: ATTACK_1
       rect:
         serializedVersion: 2
-        x: 85
-        y: 1
-        width: 63
-        height: 68
+        x: 79
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -181,12 +181,12 @@ TextureImporter:
       name: ATTACK_2
       rect:
         serializedVersion: 2
-        x: 164
-        y: 2
-        width: 62
-        height: 67
+        x: 158
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -204,11 +204,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 237
-        y: 1
-        width: 78
-        height: 63
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -225,12 +225,12 @@ TextureImporter:
       name: ATTACK_4
       rect:
         serializedVersion: 2
-        x: 323
-        y: 2
-        width: 64
-        height: 65
+        x: 316
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -247,12 +247,12 @@ TextureImporter:
       name: ATTACK_5
       rect:
         serializedVersion: 2
-        x: 401
-        y: 4
-        width: 68
-        height: 62
+        x: 395
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -269,12 +269,12 @@ TextureImporter:
       name: ATTACK_6
       rect:
         serializedVersion: 2
-        x: 480
-        y: 3
-        width: 67
-        height: 62
+        x: 474
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -292,11 +292,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 553
-        y: 2
-        width: 78
-        height: 62
+        y: 0
+        width: 79
+        height: 69
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -313,7 +313,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 2d0824ee0391ef643ad1aea5ce436b67
     internalID: 0
     vertices: []
     indices: 
@@ -321,7 +321,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":8.0,"y":1.0},"gridSpriteSize":{"x":79.0,"y":69.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       ATTACK_0: -252343562717082310
       ATTACK_1: -210908623516531236

@@ -188,9 +188,92 @@ namespace Match3
         [Header("戰鬥配置")]
         [SerializeField] private CombatConfig m_CombatConfig;
         
+        [Header("戰鬥UI")]
+        [SerializeField] private CombatUIController m_CombatUIController;
+        
         // UI更新事件
         public static event Action<int, int, bool> OnCombatStateChanged; // 玩家血量, 敵人血量, 是否玩家回合
         public static event Action<bool> OnCombatEnded; // 是否勝利
+        
+        /// <summary>
+        /// 觸發玩家攻擊動畫
+        /// </summary>
+        private void TriggerPlayerAttackAnimation()
+        {
+            if (m_CombatUIController != null)
+            {
+                m_CombatUIController.TriggerPlayerAttackAnimation();
+            }
+            else
+            {
+                Debug.LogWarning("CombatUIController 未設置，無法觸發玩家攻擊動畫");
+            }
+        }
+        
+        /// <summary>
+        /// 觸發敵人受傷動畫和血量更新
+        /// </summary>
+        private void TriggerEnemyHurtAnimation()
+        {
+            if (m_CombatUIController != null)
+            {
+                m_CombatUIController.TriggerEnemyHurtAnimation(m_EnemyHealth);
+            }
+            else
+            {
+                Debug.LogWarning("CombatUIController 未設置，無法觸發敵人受傷動畫");
+            }
+        }
+        
+        /// <summary>
+        /// 觸發敵人攻擊序列
+        /// </summary>
+        private void TriggerEnemyAttackSequence()
+        {
+            if (m_CombatUIController != null)
+            {
+                m_CombatUIController.TriggerEnemyAttackSequence();
+            }
+            else
+            {
+                Debug.LogWarning("CombatUIController 未設置，無法觸發敵人攻擊序列");
+            }
+        }
+        
+        /// <summary>
+        /// 更新玩家血量（由CombatUIController調用）
+        /// </summary>
+        public void UpdatePlayerHealth(int newHealth)
+        {
+            m_PlayerHealth = newHealth;
+            Debug.Log($"Board: 更新玩家血量為 {m_PlayerHealth}");
+            
+            // 檢查玩家是否被擊敗
+            if (m_PlayerHealth <= 0)
+            {
+                Debug.Log("玩家被擊敗！戰鬥失敗！");
+                m_IsCombatMode = false;
+                OnCombatEnded?.Invoke(false); // 失敗
+            }
+        }
+        
+        /// <summary>
+        /// 更新回合狀態（由CombatUIController調用）
+        /// </summary>
+        public void UpdateTurnState(bool isPlayerTurn)
+        {
+            m_IsPlayerTurn = isPlayerTurn;
+            Debug.Log($"Board: 更新回合狀態為玩家回合: {isPlayerTurn}");
+        }
+        
+        /// <summary>
+        /// 重置傷害計算標誌（由CombatUIController調用）
+        /// </summary>
+        public void ResetDamageCalculationFlag()
+        {
+            m_HasCalculatedDamageThisTurn = false;
+            Debug.Log("Board: 重置傷害計算標誌");
+        }
         
         // 初始化戰鬥系統
         private void InitializeCombat()
@@ -3413,66 +3496,23 @@ namespace Match3
         // 處理回合制戰鬥系統
         void HandleCombatTurn()
         {
+            // 敵人攻擊序列現在由CombatUIController處理
+            // 這裡只處理基本的回合狀態檢查
             if (!m_IsPlayerTurn)
             {
-                // 敵人回合
+                // 敵人回合計時器（用於UI顯示）
                 m_EnemyTurnTimer += Time.deltaTime;
-                
-                float enemyTurnDuration = m_CombatConfig?.EnemyTurnDuration ?? ENEMY_TURN_DURATION;
-                Debug.Log($"HandleCombatTurn() - 敵人回合計時: {m_EnemyTurnTimer:F2}/{enemyTurnDuration:F2}");
-                
-                if (m_EnemyTurnTimer >= enemyTurnDuration)
-                {
-                    Debug.Log("HandleCombatTurn() - 敵人回合時間到，執行敵人行動");
-                    
-                    // 敵人回合結束，執行敵人行動
-                    ExecuteEnemyTurn();
-                    
-                    // 切換到玩家回合
-                    m_IsPlayerTurn = true;
-                    m_EnemyTurnTimer = 0f;
-                    m_HasCalculatedDamageThisTurn = false; // 重置傷害計算標記
-                    
-                    Debug.Log("敵人回合結束，輪到玩家回合");
-                    
-                    // 更新UI
-                    UpdateCombatUI();
-                }
             }
         }
 
-        // 執行敵人回合
-        void ExecuteEnemyTurn()
-        {
-            Debug.Log("ExecuteEnemyTurn() - 開始執行敵人回合");
-            
-            // 敵人對玩家造成隨機傷害：使用CombatConfig中的設定
-            int enemyMinDamage = m_CombatConfig?.EnemyMinDamage ?? 5;
-            int enemyMaxDamage = m_CombatConfig?.EnemyMaxDamage ?? 15;
-            int enemyDamage = Random.Range(enemyMinDamage, enemyMaxDamage + 1);
-            
-            Debug.Log($"ExecuteEnemyTurn() - 攻擊前玩家血量: {m_PlayerHealth}");
-            
-            m_PlayerHealth -= enemyDamage;
-            if (m_PlayerHealth < 0) m_PlayerHealth = 0;
-            
-            Debug.Log($"敵人攻擊！造成 {enemyDamage} 點傷害");
-            Debug.Log($"玩家剩餘血量: {m_PlayerHealth}");
-            
-            // 檢查玩家是否被擊敗
-            if (m_PlayerHealth <= 0)
-            {
-                Debug.Log("玩家被擊敗！戰鬥失敗！");
-                m_IsCombatMode = false;
-                OnCombatEnded?.Invoke(false); // 失敗
-            }
-            
-            // UI更新將在敵人回合結束時進行
-        }
+        // 執行敵人回合 - 已移至CombatUIController處理
 
         // 計算並記錄傷害輸出
         void CalculateAndLogDamage()
         {
+            // 立即設置標誌，防止重複調用
+            m_HasCalculatedDamageThisTurn = true;
+            
             if (m_CurrentTurnGemsCleared > 0)
             {
                 // 基礎傷害計算：使用CombatConfig中的設定
@@ -3495,34 +3535,12 @@ namespace Match3
                 Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared}");
                 Debug.Log($"基礎傷害: {baseDamage}, 連擊加成: {comboBonus}, 總傷害: {totalDamage}");
                 
-                // 對敵人造成傷害
-                m_EnemyHealth -= totalDamage;
-                if (m_EnemyHealth < 0) m_EnemyHealth = 0;
+                // 立即觸發玩家攻擊動畫
+                Debug.Log("觸發玩家攻擊動畫");
+                TriggerPlayerAttackAnimation();
                 
-                Debug.Log($"敵人剩餘血量: {m_EnemyHealth}");
-                
-                // 更新UI
-                UpdateCombatUI();
-                
-                // 檢查戰鬥結果
-                if (m_EnemyHealth <= 0)
-                {
-                    Debug.Log("敵人被擊敗！戰鬥勝利！");
-                    m_IsCombatMode = false;
-                    OnCombatEnded?.Invoke(true); // 勝利
-                }
-                else
-                {
-                    // 切換到敵人回合
-                    m_IsPlayerTurn = false;
-                    m_EnemyTurnTimer = 0f;
-                    Debug.Log("玩家回合結束，輪到敵人回合");
-                    UpdateCombatUI();
-                }
-                
-                // 重置本回合寶石消除計數
-                m_CurrentTurnGemsCleared = 0;
-                m_HasCalculatedDamageThisTurn = true;
+                // 延遲0.25秒後更新敵人血量並觸發受傷動畫
+                StartCoroutine(DelayedEnemyDamage(totalDamage));
             }
             else
             {
@@ -3536,6 +3554,50 @@ namespace Match3
                 // 更新UI
                 UpdateCombatUI();
             }
+        }
+        
+        /// <summary>
+        /// 延遲敵人受傷處理
+        /// </summary>
+        /// <param name="damage">傷害值</param>
+        private System.Collections.IEnumerator DelayedEnemyDamage(int damage)
+        {
+            Debug.Log($"玩家攻擊動畫播放中，等待0.25秒後對敵人造成 {damage} 點傷害");
+            
+            // 等待0.25秒（讓玩家攻擊動畫播放）
+            yield return new WaitForSeconds(0.25f);
+            
+            // 對敵人造成傷害
+            m_EnemyHealth -= damage;
+            if (m_EnemyHealth < 0) m_EnemyHealth = 0;
+            
+            Debug.Log($"敵人受傷！剩餘血量: {m_EnemyHealth}");
+            
+            // 觸發敵人受傷動畫和血量UI更新
+            TriggerEnemyHurtAnimation();
+            
+            // 檢查戰鬥結果
+            if (m_EnemyHealth <= 0)
+            {
+                Debug.Log("敵人被擊敗！戰鬥勝利！");
+                m_IsCombatMode = false;
+                OnCombatEnded?.Invoke(true); // 勝利
+            }
+            else
+            {
+                // 等待0.5秒後切換到敵人回合
+                Debug.Log("等待0.5秒後開始敵人回合");
+                yield return new WaitForSeconds(0.5f);
+                
+                // 切換到敵人回合並觸發敵人攻擊動畫
+                m_IsPlayerTurn = false;
+                m_EnemyTurnTimer = 0f;
+                Debug.Log("敵人回合開始！");
+                TriggerEnemyAttackSequence();
+            }
+            
+            // 重置本回合寶石消除計數
+            m_CurrentTurnGemsCleared = 0;
         }
 
     }

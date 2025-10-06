@@ -20,6 +20,12 @@ namespace Match3
         [Header("戰鬥配置")]
         [SerializeField] private CombatConfig combatConfig;
         
+        [Header("角色動畫")]
+        [SerializeField] private CharacterAnimationController characterAnimations;
+        
+        [Header("Board引用")]
+        [SerializeField] private Board board;
+        
         [Header("動畫設定")]
         [SerializeField] private float healthBarAnimationSpeed = 2f;
         
@@ -28,6 +34,9 @@ namespace Match3
         private int currentPlayerHealth;
         private int currentEnemyHealth;
         private bool isPlayerTurn = true;
+        
+        // 動畫同步狀態
+        private bool isAnimating = false;
         
         private void Start()
         {
@@ -80,9 +89,13 @@ namespace Match3
         {
             Debug.Log($"CombatUIController.UpdateCombatUI() - 收到更新: Player={playerHealth}, Enemy={enemyHealth}, PlayerTurn={isPlayerTurn}");
             
+            // 先更新血量數據
             currentPlayerHealth = playerHealth;
             currentEnemyHealth = enemyHealth;
             this.isPlayerTurn = isPlayerTurn;
+            
+            // 不再通過CheckHealthChangesAndTriggerAnimations觸發動畫
+            // 動畫現在由專門的觸發方法處理（TriggerPlayerAttackAnimation, TriggerEnemyHurtAnimation等）
             
             // 動畫更新血量條
             StartCoroutine(AnimateHealthBars());
@@ -92,9 +105,137 @@ namespace Match3
         }
         
         /// <summary>
-        /// 動畫更新血量條
+        /// 觸發玩家攻擊動畫（用於傷害計算時）
         /// </summary>
-        private System.Collections.IEnumerator AnimateHealthBars()
+        public void TriggerPlayerAttackAnimation()
+        {
+            if (characterAnimations == null) 
+            {
+                Debug.LogWarning("CharacterAnimationController 未設置！");
+                return;
+            }
+            
+            Debug.Log("CombatUIController: 觸發玩家攻擊動畫（傷害計算）");
+            characterAnimations.PlayPlayerAttackAnimation();
+        }
+        
+        /// <summary>
+        /// 觸發敵人受傷動畫和血量更新
+        /// </summary>
+        public void TriggerEnemyHurtAnimation(int enemyHealth)
+        {
+            if (characterAnimations == null) 
+            {
+                Debug.LogWarning("CharacterAnimationController 未設置！");
+                return;
+            }
+            
+            Debug.Log($"CombatUIController: 觸發敵人受傷動畫，血量: {enemyHealth}");
+            
+            // 更新敵人血量
+            currentEnemyHealth = enemyHealth;
+            
+            // 觸發敵人受傷動畫
+            characterAnimations.PlayEnemyHurtAnimation(enemyHealth);
+            
+            // 更新血量UI
+            StartCoroutine(AnimateHealthBars());
+            UpdateHealthTexts();
+        }
+        
+        /// <summary>
+        /// 觸發敵人攻擊序列
+        /// </summary>
+        public void TriggerEnemyAttackSequence()
+        {
+            if (characterAnimations == null) 
+            {
+                Debug.LogWarning("CharacterAnimationController 未設置！");
+                return;
+            }
+            
+            Debug.Log("CombatUIController: 開始敵人攻擊序列");
+            StartCoroutine(EnemyAttackSequence());
+        }
+        
+        /// <summary>
+        /// 敵人攻擊序列協程
+        /// </summary>
+        private System.Collections.IEnumerator EnemyAttackSequence()
+        {
+            // 觸發敵人攻擊動畫
+            Debug.Log("CombatUIController: 觸發敵人攻擊動畫");
+            characterAnimations.PlayEnemyAttackAnimation();
+            
+            // 等待0.2秒
+            yield return new WaitForSeconds(0.2f);
+            
+            // 計算敵人傷害
+            int damage = Random.Range(combatConfig.EnemyMinDamage, combatConfig.EnemyMaxDamage + 1);
+            currentPlayerHealth -= damage;
+            if (currentPlayerHealth < 0) currentPlayerHealth = 0;
+            
+            Debug.Log($"CombatUIController: 敵人對玩家造成 {damage} 點傷害，玩家剩餘血量: {currentPlayerHealth}");
+            
+            // 更新Board中的玩家血量
+            UpdateBoardPlayerHealth(currentPlayerHealth);
+            
+            // 觸發玩家受傷動畫和血量更新
+            TriggerPlayerHurtAnimation(currentPlayerHealth);
+            
+            // 等待0.5秒後切換回玩家回合
+            yield return new WaitForSeconds(0.5f);
+            
+            // 切換回玩家回合
+            isPlayerTurn = true;
+            Debug.Log("CombatUIController: 切換回玩家回合");
+            
+            // 更新Board的回合狀態
+            if (board != null)
+            {
+                board.UpdateTurnState(true);
+                board.ResetDamageCalculationFlag(); // 重置傷害計算標誌
+            }
+            
+            // 更新UI
+            StartCoroutine(AnimateHealthBars());
+            UpdateHealthTexts();
+        }
+        
+        /// <summary>
+        /// 觸發玩家受傷動畫和血量更新
+        /// </summary>
+        private void TriggerPlayerHurtAnimation(int playerHealth)
+        {
+            Debug.Log($"CombatUIController: 觸發玩家受傷動畫，血量: {playerHealth}");
+            
+            // 觸發玩家受傷動畫
+            characterAnimations.PlayPlayerHurtAnimation(playerHealth);
+            
+            // 更新血量UI
+            StartCoroutine(AnimateHealthBars());
+            UpdateHealthTexts();
+        }
+        
+        /// <summary>
+        /// 更新Board中的玩家血量
+        /// </summary>
+        private void UpdateBoardPlayerHealth(int newHealth)
+        {
+            if (board != null)
+            {
+                board.UpdatePlayerHealth(newHealth);
+            }
+            else
+            {
+                Debug.LogWarning("Board 未設置，無法更新玩家血量");
+            }
+        }
+        
+        /// <summary>
+        /// 檢查血量變化並觸發動畫
+        /// </summary>
+          private System.Collections.IEnumerator AnimateHealthBars()
         {
             float startPlayerFill = playerHealthBar.fillAmount;
             float startEnemyFill = enemyHealthBar.fillAmount;
