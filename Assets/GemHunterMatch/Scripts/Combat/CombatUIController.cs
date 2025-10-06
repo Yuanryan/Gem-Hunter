@@ -29,10 +29,16 @@ namespace Match3
         [Header("動畫設定")]
         [SerializeField] private float healthBarAnimationSpeed = 2f;
         
+        [Header("血量鎖定視覺效果")]
+        [SerializeField] private GameObject shieldIconPrefab;
+        [SerializeField] private Transform enemyHealthBarParent;
+        
         private int maxPlayerHealth;
         private int maxEnemyHealth;
         private int currentPlayerHealth;
         private int currentEnemyHealth;
+        
+        private GameObject currentShieldIcon;
         private bool isPlayerTurn = true;
         
         // 動畫同步狀態
@@ -134,6 +140,21 @@ namespace Match3
             
             // 更新敵人血量
             currentEnemyHealth = enemyHealth;
+            
+            // 檢查是否血量被鎖定（目標未完成且血量為1）
+            bool goalsCompleted = LevelData.Instance.GoalLeft == 0;
+            bool healthLocked = !goalsCompleted && enemyHealth == 1;
+            
+            if (healthLocked)
+            {
+                Debug.Log($"敵人血量被鎖定！需要完成目標才能擊敗敵人 (血量: {enemyHealth}, 目標剩餘: {LevelData.Instance.GoalLeft})");
+                ShowShieldIcon();
+            }
+            else
+            {
+                Debug.Log($"敵人血量未鎖定 (血量: {enemyHealth}, 目標剩餘: {LevelData.Instance.GoalLeft})");
+                HideShieldIcon();
+            }
             
             // 觸發敵人受傷動畫
             characterAnimations.PlayEnemyHurtAnimation(enemyHealth);
@@ -313,6 +334,48 @@ namespace Match3
             if (enemyHealthText != null)
             {
                 enemyHealthText.text = $"{currentEnemyHealth}/{maxEnemyHealth}";
+            }
+        }
+        
+        /// <summary>
+        /// 顯示盾牌圖標
+        /// </summary>
+        private void ShowShieldIcon()
+        {
+            if (currentShieldIcon != null) return; // 已經顯示了
+            
+            // 使用敵人血量條的父物件，如果沒有設置則使用敵人血量條本身
+            Transform parentTransform = enemyHealthBarParent != null ? enemyHealthBarParent : enemyHealthBar.transform;
+            
+            if (parentTransform != null)
+            {
+                // 創建盾牌圖標 GameObject
+                currentShieldIcon = new GameObject("ShieldIcon");
+                currentShieldIcon.transform.SetParent(parentTransform);
+                currentShieldIcon.transform.SetAsLastSibling(); // 確保在最上層
+                
+                // 添加必要的組件
+                currentShieldIcon.AddComponent<RectTransform>();
+                currentShieldIcon.AddComponent<ShieldIcon>();
+                
+                Debug.Log($"顯示盾牌圖標，父物件: {parentTransform.name}");
+            }
+            else
+            {
+                Debug.LogWarning("找不到敵人血量條或父物件！");
+            }
+        }
+        
+        /// <summary>
+        /// 隱藏盾牌圖標
+        /// </summary>
+        private void HideShieldIcon()
+        {
+            if (currentShieldIcon != null)
+            {
+                Destroy(currentShieldIcon);
+                currentShieldIcon = null;
+                Debug.Log("隱藏盾牌圖標");
             }
         }
         

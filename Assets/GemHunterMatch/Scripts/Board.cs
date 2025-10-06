@@ -3567,11 +3567,24 @@ namespace Match3
             // 等待0.25秒（讓玩家攻擊動畫播放）
             yield return new WaitForSeconds(0.25f);
             
+            // 檢查目標是否完成
+            bool goalsCompleted = LevelData.Instance.GoalLeft == 0;
+            
             // 對敵人造成傷害
             m_EnemyHealth -= damage;
-            if (m_EnemyHealth < 0) m_EnemyHealth = 0;
             
-            Debug.Log($"敵人受傷！剩餘血量: {m_EnemyHealth}");
+            // 如果目標未完成，鎖定敵人血量在1
+            if (!goalsCompleted && m_EnemyHealth <= 0)
+            {
+                Debug.Log("目標未完成，敵人血量鎖定在1");
+                m_EnemyHealth = 1;
+            }
+            else if (m_EnemyHealth < 0)
+            {
+                m_EnemyHealth = 0;
+            }
+            
+            Debug.Log($"敵人受傷！剩餘血量: {m_EnemyHealth} (目標完成: {goalsCompleted})");
             
             // 觸發敵人受傷動畫和血量UI更新
             TriggerEnemyHurtAnimation();

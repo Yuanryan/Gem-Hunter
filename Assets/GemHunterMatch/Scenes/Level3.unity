@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 125995724}
   - component: {fileID: 125995726}
   - component: {fileID: 125995725}
+  - component: {fileID: 125995727}
   m_Layer: 5
   m_Name: PlayerArea
   m_TagString: Untagged
@@ -197,6 +198,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 125995723}
   m_CullTransparentMesh: 1
+--- !u!225 &125995727
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125995723}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &205350508
 GameObject:
   m_ObjectHideFlags: 0
@@ -1816,6 +1829,7 @@ GameObject:
   - component: {fileID: 611440122}
   - component: {fileID: 611440124}
   - component: {fileID: 611440123}
+  - component: {fileID: 611440125}
   m_Layer: 5
   m_Name: EnemyArea
   m_TagString: Untagged
@@ -1883,6 +1897,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 611440121}
   m_CullTransparentMesh: 1
+--- !u!225 &611440125
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 611440121}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &755567132
 GameObject:
   m_ObjectHideFlags: 0
@@ -3834,6 +3860,7 @@ GameObject:
   - component: {fileID: 1534302885}
   - component: {fileID: 1534302887}
   - component: {fileID: 1534302886}
+  - component: {fileID: 1534302888}
   m_Layer: 5
   m_Name: CombatContainer
   m_TagString: Untagged
@@ -3900,6 +3927,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1534302884}
   m_CullTransparentMesh: 1
+--- !u!225 &1534302888
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1534302884}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1662047621
 GameObject:
   m_ObjectHideFlags: 0
@@ -3990,6 +4029,7 @@ GameObject:
   - component: {fileID: 1839172519}
   - component: {fileID: 1839172518}
   - component: {fileID: 1839172517}
+  - component: {fileID: 1839172523}
   m_Layer: 5
   m_Name: CombatUI
   m_TagString: Untagged
@@ -4033,6 +4073,8 @@ MonoBehaviour:
   characterAnimations: {fileID: 1839172517}
   board: {fileID: 1954289511}
   healthBarAnimationSpeed: 2
+  shieldIconPrefab: {fileID: 0}
+  enemyHealthBarParent: {fileID: 0}
 --- !u!114 &1839172519
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4116,6 +4158,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!225 &1839172523
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839172516}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1884806550
 GameObject:
   m_ObjectHideFlags: 0
