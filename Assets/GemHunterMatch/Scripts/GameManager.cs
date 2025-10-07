@@ -156,9 +156,8 @@ namespace Match3
             
             LevelData.Instance.OnAllGoalFinished += () =>
             {
-                // 勝利條件已改為敵人死亡，不再基於關卡目標
-                // 不再鎖定Board，讓戰鬥系統繼續進行
-                Debug.Log("關卡目標已完成，但勝利條件已改為敵人死亡");
+                Instance.Board.ToggleInput(false);
+                Instance.Board.TriggerFinalStretch();
             };
 
             LevelData.Instance.OnNoMoveLeft += () =>

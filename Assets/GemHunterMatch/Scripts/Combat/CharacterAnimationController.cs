@@ -65,6 +65,12 @@ namespace Match3
                 isPlayerAttacking = true;
                 playerAnimator.SetTrigger("Attack");
                 
+                // 播放玩家攻擊音效
+                if (GameManager.Instance.Settings.SoundSettings.PlayerAttackSound != null)
+                {
+                    GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.PlayerAttackSound);
+                }
+                
                 // 監聽動畫完成事件
                 StartCoroutine(WaitForAnimationComplete("PlayerAttack", () => {
                     isPlayerAttacking = false;
@@ -93,6 +99,12 @@ namespace Match3
                 isEnemyAttacking = true;
                 enemyAnimator.SetTrigger("Attack");
                 
+                // 播放敵人攻擊音效
+                if (GameManager.Instance.Settings.SoundSettings.EnemyAttackSound != null)
+                {
+                    GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.EnemyAttackSound);
+                }
+                
                 // 監聽動畫完成事件
                 StartCoroutine(WaitForAnimationComplete("EnemyAttack", () => {
                     isEnemyAttacking = false;
@@ -117,6 +129,12 @@ namespace Match3
             if (playerAnimator != null)
             {
                 playerAnimator.SetTrigger("Defend");
+                
+                // 播放玩家格擋音效
+                if (GameManager.Instance.Settings.SoundSettings.PlayerBlockSound != null)
+                {
+                    GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.PlayerBlockSound);
+                }
                 
                 // 防禦動畫完成後回到閒置
                 StartCoroutine(WaitForAnimationComplete("PlayerDefend", () => {
@@ -191,6 +209,12 @@ namespace Match3
                 Debug.Log("CharacterAnimationController: 觸發玩家受傷動畫");
                 playerAnimator.SetTrigger("Hurt");
                 
+                // 播放玩家受傷音效
+                if (GameManager.Instance.Settings.SoundSettings.PlayerHurtSound != null)
+                {
+                    GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.PlayerHurtSound);
+                }
+                
                 // 檢查是否死亡
                 if (currentHealth <= 0)
                 {
@@ -227,6 +251,12 @@ namespace Match3
             {
                 Debug.Log("CharacterAnimationController: 觸發敵人受傷動畫");
                 enemyAnimator.SetTrigger("Hurt");
+                
+                // 播放敵人受傷音效
+                if (GameManager.Instance.Settings.SoundSettings.EnemyHurtSound != null)
+                {
+                    GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.EnemyHurtSound);
+                }
                 
                 // 檢查是否死亡
                 if (currentHealth <= 0)

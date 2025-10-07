@@ -94,5 +94,12 @@ namespace Match3
 
         public AudioClip WinSound;
         public AudioClip LooseSound;
+        
+        [Header("戰鬥音效")]
+        public AudioClip PlayerAttackSound;
+        public AudioClip PlayerHurtSound;
+        public AudioClip PlayerBlockSound;
+        public AudioClip EnemyAttackSound;
+        public AudioClip EnemyHurtSound;
     }
 }
