@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level1
   m_EditorClassIdentifier: Assembly-CSharp::Match3.CombatConfig
   PlayerMaxHealth: 100
-  EnemyMaxHealth: 5
+  EnemyMaxHealth: 350
   BaseDamagePerGem: 3
   ComboThreshold: 3
   ComboBonusPerGem: 2
