@@ -3744,6 +3744,28 @@ namespace Match3
         }
         
         /// <summary>
+        /// 檢查敵人血量是否被鎖定（目標未完成）
+        /// </summary>
+        /// <returns>如果敵人血量被鎖定在1則返回true</returns>
+        public bool IsEnemyHealthLocked()
+        {
+            // 檢查目標是否完成
+            bool goalsCompleted = LevelData.Instance != null && LevelData.Instance.GoalLeft == 0;
+            
+            // 敵人血量被鎖定在1表示目標未完成
+            return !goalsCompleted && m_EnemyHealth == 1;
+        }
+        
+        /// <summary>
+        /// 獲取敵人當前血量
+        /// </summary>
+        /// <returns>敵人當前血量</returns>
+        public int GetEnemyHealth()
+        {
+            return m_EnemyHealth;
+        }
+        
+        /// <summary>
         /// 獲取當前回合清除的總寶石數量
         /// </summary>
         /// <returns>當前回合清除的總寶石數量</returns>

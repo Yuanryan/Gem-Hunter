@@ -15,11 +15,15 @@ MonoBehaviour:
   PlayerMaxHealth: 100
   EnemyMaxHealth: 650
   BaseDamagePerGem: 3
+  EnemyMinDamage: 10
+  EnemyMaxDamage: 20
   ComboThreshold: 3
   ComboBonusPerGem: 2
+  HealPerWhiteGem: 1
+  MaxHealAmount: 100
+  ShieldPerGreenGem: 1
+  MaxShieldAmount: 50
   EnemyTurnDuration: 2
-  EnemyMinDamage: 8
-  EnemyMaxDamage: 15
   ShowCombatUI: 1
   UIPosition: 0
   UIOpacity: 0.8

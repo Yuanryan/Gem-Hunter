@@ -32,6 +32,7 @@ namespace Match3
         [SerializeField] private TextMeshProUGUI playerHealText; // 玩家治療數值
         [SerializeField] private TextMeshProUGUI playerShieldText; // 玩家護盾數值
         [SerializeField] private TextMeshProUGUI enemyDamageText; // 敵人傷害數值
+        [SerializeField] private TextMeshProUGUI enemyShieldBreakText; // 敵人護盾破壞提示文字
         
         [Header("動畫設定")]
         [SerializeField] private float healthBarAnimationSpeed = 2f;
@@ -723,13 +724,26 @@ namespace Match3
             currentTurnHeal = whiteGems * combatConfig.HealPerWhiteGem;
             currentTurnShield = greenGems * combatConfig.ShieldPerGreenGem;
             
+            // 計算連擊加成
+            int comboBonus = 0;
+            if (totalGems > combatConfig.ComboThreshold)
+            {
+                comboBonus = (totalGems - combatConfig.ComboThreshold) * combatConfig.ComboBonusPerGem;
+            }
+            
+            // 總傷害 = 基礎傷害 + 連擊加成
+            currentTurnDamage += comboBonus;
+            
             // 敵人傷害只在回合開始時計算一次，這裡不重新計算
             // currentTurnEnemyDamage 保持不變直到下個回合
             
             // 更新UI顯示
             UpdateRealtimeTexts();
             
-            Debug.Log($"實時數值更新 - 玩家傷害: {currentTurnDamage}, 治療: {currentTurnHeal}, 護盾: {currentTurnShield}, 敵人下回合傷害: {currentTurnEnemyDamage}");
+            // 更新敵人護盾破壞提示文字
+            UpdateEnemyShieldBreakText();
+            
+            Debug.Log($"實時數值更新 - 玩家傷害: {currentTurnDamage} (基礎: {(totalGems - whiteGems - greenGems) * combatConfig.BaseDamagePerGem}, 連擊: {comboBonus}), 治療: {currentTurnHeal}, 護盾: {currentTurnShield}, 敵人下回合傷害: {currentTurnEnemyDamage}");
         }
         
         /// <summary>
@@ -745,6 +759,46 @@ namespace Match3
         }
         
         /// <summary>
+        /// 更新敵人護盾破壞提示文字
+        /// </summary>
+        public void UpdateEnemyShieldBreakText()
+        {
+            if (enemyShieldBreakText == null) 
+            {
+                Debug.LogWarning("enemyShieldBreakText 未設置！");
+                return;
+            }
+            
+            if (board == null)
+            {
+                Debug.LogWarning("Board 未設置！");
+                return;
+            }
+            
+            // 檢查敵人血量是否被鎖定在1（目標未完成）
+            bool isEnemyHealthLocked = board.IsEnemyHealthLocked();
+            int enemyHealth = board.GetEnemyHealth();
+            
+            // 檢查目標完成狀態
+            bool goalsCompleted = LevelData.Instance != null && LevelData.Instance.GoalLeft == 0;
+            
+            Debug.Log($"UpdateEnemyShieldBreakText: 敵人血量={enemyHealth}, 目標完成={goalsCompleted}, 是否被鎖定={isEnemyHealthLocked}");
+            
+            if (isEnemyHealthLocked)
+            {
+                enemyShieldBreakText.text = "Clear Objective to break shield";
+                enemyShieldBreakText.color = Color.yellow;
+                enemyShieldBreakText.gameObject.SetActive(true);
+                Debug.Log("敵人護盾提示文字已顯示 - 目標未完成");
+            }
+            else
+            {
+                enemyShieldBreakText.gameObject.SetActive(false);
+                Debug.Log("敵人護盾提示文字已隱藏 - 目標已完成");
+            }
+        }
+        
+        /// <summary>
         /// 更新實時數值文字
         /// </summary>
         private void UpdateRealtimeTexts()
@@ -753,28 +807,24 @@ namespace Match3
             if (playerDamageText != null)
             {
                 playerDamageText.text = $"Attack: {currentTurnDamage}";
-                playerDamageText.color = currentTurnDamage > 0 ? Color.red : Color.gray;
             }
             
             // 更新玩家治療
             if (playerHealText != null)
             {
                 playerHealText.text = $"Healing: {currentTurnHeal}";
-                playerHealText.color = currentTurnHeal > 0 ? Color.green : Color.gray;
             }
             
             // 更新玩家護盾
             if (playerShieldText != null)
             {
                 playerShieldText.text = $"Shield: {currentTurnShield}";
-                playerShieldText.color = currentTurnShield > 0 ? Color.cyan : Color.gray;
             }
             
             // 更新敵人傷害（顯示敵人本回合傷害）
             if (enemyDamageText != null)
             {
                 enemyDamageText.text = $"Attack: {currentTurnEnemyDamage}";
-                enemyDamageText.color = currentTurnEnemyDamage > 0 ? Color.red : Color.gray;
             }
         }
         
@@ -788,12 +838,37 @@ namespace Match3
             currentTurnShield = 0;
             currentTurnEnemyDamage = 0;
             UpdateRealtimeTexts();
+            
+            // 更新敵人護盾破壞提示文字
+            UpdateEnemyShieldBreakText();
+            
             Debug.Log("實時數值已重置");
         }
         
         /// <summary>
         /// 測試實時數值更新（用於調試）
         /// </summary>
+        [ContextMenu("測試敵人護盾提示文字")]
+        public void TestEnemyShieldBreakText()
+        {
+            Debug.Log("=== 測試敵人護盾破壞提示文字 ===");
+            
+            if (board == null)
+            {
+                Debug.LogError("Board 未設置！");
+                return;
+            }
+            
+            // 測試敵人血量鎖定狀態
+            bool isLocked = board.IsEnemyHealthLocked();
+            Debug.Log($"敵人血量是否被鎖定: {isLocked}");
+            Debug.Log($"敵人當前血量: {currentEnemyHealth}");
+            
+            // 更新提示文字
+            UpdateEnemyShieldBreakText();
+            
+            Debug.Log("敵人護盾提示文字測試完成");
+        }
 
 
         /// <summary>
