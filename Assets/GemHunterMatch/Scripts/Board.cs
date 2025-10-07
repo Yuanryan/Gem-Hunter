@@ -178,7 +178,10 @@ namespace Match3
         // 回合制戰鬥系統相關變數
         private int m_CurrentTurnGemsCleared = 0;
         private int m_CurrentTurnWhiteGemsCleared = 0; // 本回合清除的白色寶石數量
+        private int m_CurrentTurnGreenGemsCleared = 0; // 本回合清除的綠色寶石數量
         private int m_PendingHealAmount = 0; // 待處理的治療量
+        private int m_PendingShieldAmount = 0; // 待處理的護盾量
+        private int m_CurrentShieldAmount = 0; // 當前護盾值
         private bool m_IsPlayerTurn = true;
         private int m_PlayerHealth = 100;
         private int m_EnemyHealth = 100;
@@ -296,6 +299,8 @@ namespace Match3
             m_IsCombatMode = true;
             m_CurrentTurnGemsCleared = 0;
             m_CurrentTurnWhiteGemsCleared = 0; // 重置白色寶石計數
+            m_CurrentTurnGreenGemsCleared = 0; // 重置綠色寶石計數
+            m_CurrentShieldAmount = 0; // 重置護盾值
             m_HasCalculatedDamageThisTurn = false;
             m_EnemyTurnTimer = 0f;
         }
@@ -1824,6 +1829,11 @@ namespace Match3
                             {
                                 m_CurrentTurnWhiteGemsCleared++;
                                 Debug.Log($"消除白色寶石！本回合白色寶石數量: {m_CurrentTurnWhiteGemsCleared}");
+                            }
+                            else if (gem.GemType == 4)
+                            {
+                                m_CurrentTurnGreenGemsCleared++;
+                                Debug.Log($"消除綠色寶石！本回合綠色寶石數量: {m_CurrentTurnGreenGemsCleared}");
                             }
                         }
 
@@ -3499,7 +3509,7 @@ namespace Match3
             {
                 // 基礎傷害計算：使用CombatConfig中的設定
                 int baseDamagePerGem = m_CombatConfig?.BaseDamagePerGem ?? 10;
-                int baseDamage = (m_CurrentTurnGemsCleared - m_CurrentTurnWhiteGemsCleared) * baseDamagePerGem;
+                int baseDamage = (m_CurrentTurnGemsCleared - m_CurrentTurnWhiteGemsCleared - m_CurrentTurnGreenGemsCleared) * baseDamagePerGem;
                 
                 // 連擊加成：使用CombatConfig中的設定
                 int comboBonus = 0;
@@ -3522,12 +3532,25 @@ namespace Match3
                     Debug.Log($"白色寶石治療！消除白色寶石數量: {m_CurrentTurnWhiteGemsCleared}, 治療量: {healAmount}");
                 }
                 
+                // 計算護盾量：綠色寶石提供護盾
+                int shieldAmount = 0;
+                if (m_CurrentTurnGreenGemsCleared > 0)
+                {
+                    int shieldPerGreenGem = m_CombatConfig?.ShieldPerGreenGem ?? 5;
+                    shieldAmount = m_CurrentTurnGreenGemsCleared * shieldPerGreenGem;
+                    Debug.Log($"綠色寶石護盾！消除綠色寶石數量: {m_CurrentTurnGreenGemsCleared}, 護盾量: {shieldAmount}");
+                }
+                
                 // 記錄傷害輸出
-                Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared} (其中白色寶石: {m_CurrentTurnWhiteGemsCleared})");
+                Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared} (其中白色寶石: {m_CurrentTurnWhiteGemsCleared}, 綠色寶石: {m_CurrentTurnGreenGemsCleared})");
                 Debug.Log($"基礎傷害: {baseDamage}, 連擊加成: {comboBonus}, 總傷害: {totalDamage}");
                 if (healAmount > 0)
                 {
                     Debug.Log($"治療量: {healAmount}");
+                }
+                if (shieldAmount > 0)
+                {
+                    Debug.Log($"護盾量: {shieldAmount}");
                 }
                 
                 // 立即觸發玩家攻擊動畫
@@ -3542,6 +3565,13 @@ namespace Match3
                 {
                     m_PendingHealAmount = healAmount;
                     Debug.Log($"儲存治療量: {healAmount}，將在敵人攻擊後治療玩家");
+                }
+                
+                // 如果有護盾量，將護盾量存儲起來，在敵人攻擊前使用
+                if (shieldAmount > 0)
+                {
+                    m_PendingShieldAmount = shieldAmount;
+                    Debug.Log($"儲存護盾量: {shieldAmount}，將在敵人攻擊前提供護盾");
                 }
             }
             else
@@ -3615,6 +3645,11 @@ namespace Match3
             // 重置本回合寶石消除計數
             m_CurrentTurnGemsCleared = 0;
             m_CurrentTurnWhiteGemsCleared = 0; // 重置白色寶石計數
+            m_CurrentTurnGreenGemsCleared = 0; // 重置綠色寶石計數
+            
+            // 重置護盾值（每回合結束後護盾消失）
+            m_CurrentShieldAmount = 0;
+            Debug.Log("回合結束，護盾已重置");
         }
         
         /// <summary>
@@ -3645,6 +3680,35 @@ namespace Match3
             {
                 Debug.Log($"玩家血量已滿，無法治療 (當前血量: {m_PlayerHealth}, 最大血量: {maxHealAmount})");
             }
+        }
+        
+        /// <summary>
+        /// 獲取並清除待處理的護盾量
+        /// </summary>
+        /// <returns>待處理的護盾量</returns>
+        public int GetAndClearPendingShieldAmount()
+        {
+            int shieldAmount = m_PendingShieldAmount;
+            m_PendingShieldAmount = 0;
+            return shieldAmount;
+        }
+        
+        /// <summary>
+        /// 獲取當前護盾值
+        /// </summary>
+        /// <returns>當前護盾值</returns>
+        public int GetCurrentShieldAmount()
+        {
+            return m_CurrentShieldAmount;
+        }
+        
+        /// <summary>
+        /// 設定當前護盾值
+        /// </summary>
+        /// <param name="shieldAmount">護盾值</param>
+        public void SetCurrentShieldAmount(int shieldAmount)
+        {
+            m_CurrentShieldAmount = shieldAmount;
         }
         
         /// <summary>

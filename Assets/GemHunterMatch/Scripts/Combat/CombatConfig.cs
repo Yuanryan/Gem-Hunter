@@ -32,6 +32,13 @@ namespace Match3
         [Tooltip("治療上限：玩家血量不能超過此值")]
         public int MaxHealAmount = 100;
         
+        [Header("護盾設定")]
+        [Tooltip("每個綠色寶石提供的護盾值")]
+        public int ShieldPerGreenGem = 5;
+        
+        [Tooltip("護盾上限：護盾值不能超過此值")]
+        public int MaxShieldAmount = 50;
+        
         [Header("敵人設定")]
         [Tooltip("敵人回合持續時間（秒）")]
         public float EnemyTurnDuration = 2f;

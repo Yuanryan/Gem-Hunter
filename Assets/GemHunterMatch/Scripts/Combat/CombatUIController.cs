@@ -193,18 +193,66 @@ namespace Match3
             
             // 計算敵人傷害
             int damage = Random.Range(combatConfig.EnemyMinDamage, combatConfig.EnemyMaxDamage + 1);
-            currentPlayerHealth -= damage;
+            
+            // 檢查是否有待處理的護盾量（來自綠色寶石）
+            int shieldAmount = 0;
+            if (board != null)
+            {
+                shieldAmount = board.GetAndClearPendingShieldAmount();
+                if (shieldAmount > 0)
+                {
+                    Debug.Log($"CombatUIController: 獲得護盾！護盾量: {shieldAmount}");
+                    // 計算實際護盾量（不超過最大護盾）
+                    int maxShieldAmount = combatConfig.MaxShieldAmount;
+                    int actualShieldAmount = Mathf.Min(shieldAmount, maxShieldAmount - board.GetCurrentShieldAmount());
+                    
+                    if (actualShieldAmount > 0)
+                    {
+                        int newShieldAmount = board.GetCurrentShieldAmount() + actualShieldAmount;
+                        board.SetCurrentShieldAmount(newShieldAmount);
+                        Debug.Log($"CombatUIController: 護盾已激活！當前護盾值: {newShieldAmount}");
+                    }
+                }
+            }
+            
+            // 計算實際傷害（護盾阻擋）
+            int currentShield = board != null ? board.GetCurrentShieldAmount() : 0;
+            int actualDamage = Mathf.Max(0, damage - currentShield);
+            int shieldUsed = Mathf.Min(damage, currentShield);
+            
+            if (currentShield > 0)
+            {
+                Debug.Log($"CombatUIController: 護盾阻擋了 {shieldUsed} 點傷害！剩餘護盾: {currentShield - shieldUsed}");
+                // 更新護盾值
+                int newShieldAmount = Mathf.Max(0, currentShield - shieldUsed);
+                if (board != null)
+                {
+                    board.SetCurrentShieldAmount(newShieldAmount);
+                }
+            }
+            
+            currentPlayerHealth -= actualDamage;
             if (currentPlayerHealth < 0) currentPlayerHealth = 0;
             
-            Debug.Log($"CombatUIController: 敵人對玩家造成 {damage} 點傷害，玩家剩餘血量: {currentPlayerHealth}");
+            Debug.Log($"CombatUIController: 敵人對玩家造成 {damage} 點傷害，護盾阻擋 {shieldUsed} 點，實際傷害 {actualDamage}，玩家剩餘血量: {currentPlayerHealth}");
             
             // 更新Board中的玩家血量
             UpdateBoardPlayerHealth(currentPlayerHealth);
             
-            // 觸發玩家受傷動畫和血量更新
-            TriggerPlayerHurtAnimation(currentPlayerHealth);
+            // 根據是否有護盾來決定播放哪種動畫
+            if (currentShield > 0 && shieldUsed > 0)
+            {
+                // 有護盾阻擋傷害，播放防禦動畫
+                Debug.Log("CombatUIController: 播放防禦動畫（護盾阻擋）");
+                characterAnimations.PlayPlayerDefendAnimation();
+            }
+            else
+            {
+                // 沒有護盾或護盾被完全擊破，播放受傷動畫
+                TriggerPlayerHurtAnimation(currentPlayerHealth);
+            }
             
-            // 等待0.3秒讓受傷動畫播放
+            // 等待0.3秒讓動畫播放
             yield return new WaitForSeconds(0.3f);
             
             // 檢查是否有待處理的治療量（來自白色寶石）
