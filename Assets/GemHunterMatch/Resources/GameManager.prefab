@@ -355,6 +355,7 @@ MonoBehaviour:
       PlayerAttackSound: {fileID: 8300000, guid: 391a9f117bf0e484d8ad3d410ce0a920, type: 3}
       PlayerHurtSound: {fileID: 8300000, guid: de8c7a0998aa09d4a8464cfc286a4de8, type: 3}
       PlayerBlockSound: {fileID: 8300000, guid: 2318af6655c2e4d43ba3c726ed1088e0, type: 3}
+      PlayerHealSound: {fileID: 8300000, guid: 51fb8fbdf9831e64b95b777dcb5afc1c, type: 3}
       EnemyAttackSound: {fileID: 8300000, guid: f0bae50f15af05848bc4c93325a8cee4, type: 3}
       EnemyHurtSound: {fileID: 0}
   BonusItems:

@@ -3681,7 +3681,21 @@ namespace Match3
         {
             Debug.Log($"開始治療玩家！治療量: {healAmount}");
             
+            // 檢查玩家是否已死亡
+            if (m_PlayerHealth <= 0)
+            {
+                Debug.Log("玩家已死亡，無法治療！");
+                yield break;
+            }
+            
             // 觸發治療動畫（如果有的話）
+            // 播放治療音效
+            if (GameManager.Instance.Settings.SoundSettings.PlayerHealSound != null)
+            {
+                Debug.Log("Board: 播放治療音效");
+                GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.PlayerHealSound);
+            }
+            
             // 等待0.2秒讓治療動畫播放
             yield return new WaitForSeconds(0.2f);
             
@@ -3763,6 +3777,15 @@ namespace Match3
         public int GetEnemyHealth()
         {
             return m_EnemyHealth;
+        }
+        
+        /// <summary>
+        /// 檢查是否處於戰鬥模式
+        /// </summary>
+        /// <returns>如果處於戰鬥模式則返回true</returns>
+        public bool IsCombatMode
+        {
+            get { return m_IsCombatMode; }
         }
         
         /// <summary>

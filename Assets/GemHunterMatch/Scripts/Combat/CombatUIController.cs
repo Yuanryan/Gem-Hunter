@@ -301,6 +301,10 @@ namespace Match3
                 // 有護盾阻擋傷害，播放防禦動畫
                 Debug.Log("CombatUIController: 播放防禦動畫（護盾阻擋）");
                 characterAnimations.PlayPlayerDefendAnimation();
+                
+                // 更新血量UI（即使防禦也需要更新護盾消耗）
+                StartCoroutine(AnimateHealthBars());
+                UpdateHealthTexts();
             }
             else
             {
@@ -309,7 +313,7 @@ namespace Match3
             }
             
             // 等待0.3秒讓動畫播放
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.6f);
             
             // 檢查是否有待處理的治療量（來自白色寶石）
             if (board != null)
@@ -317,8 +321,16 @@ namespace Match3
                 int healAmount = board.GetAndClearPendingHealAmount();
                 if (healAmount > 0)
                 {
-                    Debug.Log($"CombatUIController: 開始治療玩家！治療量: {healAmount}");
-                    yield return StartCoroutine(HealPlayerSequence(healAmount));
+                    // 檢查玩家是否已死亡
+                    if (currentPlayerHealth <= 0)
+                    {
+                        Debug.Log("CombatUIController: 玩家已死亡，無法治療！");
+                    }
+                    else
+                    {
+                        Debug.Log($"CombatUIController: 開始治療玩家！治療量: {healAmount}");
+                        yield return StartCoroutine(HealPlayerSequence(healAmount));
+                    }
                 }
             }
             
@@ -349,11 +361,25 @@ namespace Match3
         {
             Debug.Log($"CombatUIController: 開始治療序列，治療量: {healAmount}");
             
+            // 檢查玩家是否已死亡
+            if (currentPlayerHealth <= 0)
+            {
+                Debug.Log("CombatUIController: 玩家已死亡，取消治療序列！");
+                yield break;
+            }
+            
             // 播放治療動畫
             if (characterAnimations != null)
             {
                 Debug.Log("CombatUIController: 播放玩家治療動畫");
                 characterAnimations.PlayPlayerHealAnimation();
+            }
+            
+            // 播放治療音效
+            if (combatConfig != null && GameManager.Instance.Settings.SoundSettings.PlayerHealSound != null)
+            {
+                Debug.Log("CombatUIController: 播放治療音效");
+                GameManager.Instance.PlaySFX(GameManager.Instance.Settings.SoundSettings.PlayerHealSound);
             }
             
             // 等待治療動畫播放
@@ -786,8 +812,8 @@ namespace Match3
             
             if (isEnemyHealthLocked)
             {
-                enemyShieldBreakText.text = "Clear Objective to break shield";
-                enemyShieldBreakText.color = Color.yellow;
+                enemyShieldBreakText.text = "Clear objective to break shield!";
+                enemyShieldBreakText.color = Color.red;
                 enemyShieldBreakText.gameObject.SetActive(true);
                 Debug.Log("敵人護盾提示文字已顯示 - 目標未完成");
             }

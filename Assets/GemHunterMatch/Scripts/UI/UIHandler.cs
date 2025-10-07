@@ -543,8 +543,6 @@ namespace Match3
         {
             UpdateTopBarData();
             
-            // 勝利條件已改為敵人死亡，由戰鬥系統處理
-            // 這裡只處理失敗情況（步數用完等）
             ShowLose();
         }
 

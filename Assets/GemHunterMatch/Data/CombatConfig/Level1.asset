@@ -17,7 +17,7 @@ MonoBehaviour:
   BaseDamagePerGem: 3
   EnemyMinDamage: 10
   EnemyMaxDamage: 17
-  ComboThreshold: 3
+  ComboThreshold: 10
   ComboBonusPerGem: 2
   HealPerWhiteGem: 2
   MaxHealAmount: 100

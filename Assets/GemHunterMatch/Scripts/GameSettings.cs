@@ -99,6 +99,7 @@ namespace Match3
         public AudioClip PlayerAttackSound;
         public AudioClip PlayerHurtSound;
         public AudioClip PlayerBlockSound;
+        public AudioClip PlayerHealSound;
         public AudioClip EnemyAttackSound;
         public AudioClip EnemyHurtSound;
     }

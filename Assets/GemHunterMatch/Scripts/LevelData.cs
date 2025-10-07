@@ -95,6 +95,14 @@ namespace Match3
                             GameManager.Instance.WinStar();
                             // 勝利條件已改為敵人死亡，不再鎖定Board
                             Debug.Log("關卡目標已完成，但勝利條件已改為敵人死亡");
+                            
+                            // 檢查是否在戰鬥模式中
+                            if (GameManager.Instance?.Board?.IsCombatMode == true)
+                            {
+                                Debug.Log("目標已完成，但在戰鬥模式中，不觸發結束畫面");
+                                return false;
+                            }
+                            
                             OnAllGoalFinished?.Invoke();
                         }
                     }
@@ -129,6 +137,13 @@ namespace Match3
 
             if (RemainingMove <= 0)
             {
+                // 檢查是否在戰鬥模式中
+                if (GameManager.Instance?.Board?.IsCombatMode == true)
+                {
+                    Debug.Log("移動次數用完，但在戰鬥模式中，不觸發失敗");
+                    return;
+                }
+                
                 OnNoMoveLeft();
             }
         }
