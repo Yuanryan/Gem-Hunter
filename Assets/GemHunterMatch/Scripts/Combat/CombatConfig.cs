@@ -19,6 +19,12 @@ namespace Match3
         [Tooltip("每個寶石的基礎傷害")]
         public int BaseDamagePerGem = 3;
         
+        [Tooltip("敵人最小傷害")]
+        public int EnemyMinDamage = 8;
+        
+        [Tooltip("敵人最大傷害")]
+        public int EnemyMaxDamage = 15;
+        
         [Tooltip("連擊加成：消除超過此數量的寶石時開始加成")]
         public int ComboThreshold = 3;
         
@@ -42,12 +48,6 @@ namespace Match3
         [Header("敵人設定")]
         [Tooltip("敵人回合持續時間（秒）")]
         public float EnemyTurnDuration = 2f;
-        
-        [Tooltip("敵人最小傷害")]
-        public int EnemyMinDamage = 5;
-        
-        [Tooltip("敵人最大傷害")]
-        public int EnemyMaxDamage = 15;
         
         [Header("UI設定")]
         [Tooltip("是否顯示戰鬥界面")]

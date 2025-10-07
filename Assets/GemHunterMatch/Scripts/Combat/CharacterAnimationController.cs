@@ -126,6 +126,22 @@ namespace Match3
         }
         
         /// <summary>
+        /// 播放玩家治療動畫
+        /// </summary>
+        public void PlayPlayerHealAnimation()
+        {
+            if (playerAnimator != null)
+            {
+                playerAnimator.SetTrigger("Heal");
+                
+                // 治療動畫完成後回到閒置
+                StartCoroutine(WaitForAnimationComplete("PlayerHeal", () => {
+                    PlayIdleAnimations();
+                }));
+            }
+        }
+        
+        /// <summary>
         /// 播放敵人防禦動畫
         /// </summary>
         public void PlayEnemyDefendAnimation()

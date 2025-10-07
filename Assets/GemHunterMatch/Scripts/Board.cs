@@ -290,7 +290,6 @@ namespace Match3
             }
             else
             {
-                Debug.LogWarning("沒有設定CombatConfig，使用默認值");
                 m_PlayerHealth = 100;
                 m_EnemyHealth = 100;
             }
@@ -303,6 +302,14 @@ namespace Match3
             m_CurrentShieldAmount = 0; // 重置護盾值
             m_HasCalculatedDamageThisTurn = false;
             m_EnemyTurnTimer = 0f;
+            
+            // 重置實時數值顯示
+            if (m_CombatUIController != null)
+            {
+                m_CombatUIController.ResetRealtimeValues();
+                // 計算本回合敵人傷害
+                m_CombatUIController.CalculateEnemyDamageForTurn();
+            }
         }
         
         // 更新戰鬥UI
@@ -1834,6 +1841,12 @@ namespace Match3
                             {
                                 m_CurrentTurnGreenGemsCleared++;
                                 Debug.Log($"消除綠色寶石！本回合綠色寶石數量: {m_CurrentTurnGreenGemsCleared}");
+                            }
+                            
+                            // 更新實時數值顯示
+                            if (m_CombatUIController != null)
+                            {
+                                m_CombatUIController.UpdateRealtimeValues();
                             }
                         }
 
@@ -3649,7 +3662,15 @@ namespace Match3
             
             // 重置護盾值（每回合結束後護盾消失）
             m_CurrentShieldAmount = 0;
-            Debug.Log("回合結束，護盾已重置");
+            yield return new WaitForSeconds(0.5f);
+            // 重置實時數值顯示
+            if (m_CombatUIController != null)
+            {
+                m_CombatUIController.ResetRealtimeValues();
+                // 計算敵人下回合的傷害（為玩家回合顯示）
+                m_CombatUIController.CalculateEnemyDamageForTurn();
+            }
+
         }
         
         /// <summary>
@@ -3721,6 +3742,41 @@ namespace Match3
             m_PendingHealAmount = 0;
             return healAmount;
         }
+        
+        /// <summary>
+        /// 獲取當前回合清除的總寶石數量
+        /// </summary>
+        /// <returns>當前回合清除的總寶石數量</returns>
+        public int GetCurrentTurnGemsCleared()
+        {
+            return m_CurrentTurnGemsCleared;
+        }
+        
+
+        
+        /// <summary>
+        /// 獲取當前回合清除的白色寶石數量
+        /// </summary>
+        /// <returns>當前回合清除的白色寶石數量</returns>
+        public int GetCurrentTurnWhiteGemsCleared()
+        {
+            return m_CurrentTurnWhiteGemsCleared;
+        }
+        
+        /// <summary>
+        /// 獲取當前回合清除的綠色寶石數量
+        /// </summary>
+        /// <returns>當前回合清除的綠色寶石數量</returns>
+        public int GetCurrentTurnGreenGemsCleared()
+        {
+            return m_CurrentTurnGreenGemsCleared;
+        }
+        
+        /// <summary>
+        /// 獲取當前回合清除的紅色寶石數量（總數減去白色和綠色）
+        /// </summary>
+        /// <returns>當前回合清除的紅色寶石數量</returns>
+
         
         /// <summary>
         /// 觸發玩家治療動畫
