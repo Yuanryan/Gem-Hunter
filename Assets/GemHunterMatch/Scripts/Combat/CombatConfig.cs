@@ -25,6 +25,13 @@ namespace Match3
         [Tooltip("連擊加成：每多一個寶石增加的傷害")]
         public int ComboBonusPerGem = 2;
         
+        [Header("治療設定")]
+        [Tooltip("每個白色寶石的治療量")]
+        public int HealPerWhiteGem = 3;
+        
+        [Tooltip("治療上限：玩家血量不能超過此值")]
+        public int MaxHealAmount = 100;
+        
         [Header("敵人設定")]
         [Tooltip("敵人回合持續時間（秒）")]
         public float EnemyTurnDuration = 2f;

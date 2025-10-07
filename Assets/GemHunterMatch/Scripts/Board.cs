@@ -177,6 +177,8 @@ namespace Match3
 
         // 回合制戰鬥系統相關變數
         private int m_CurrentTurnGemsCleared = 0;
+        private int m_CurrentTurnWhiteGemsCleared = 0; // 本回合清除的白色寶石數量
+        private int m_PendingHealAmount = 0; // 待處理的治療量
         private bool m_IsPlayerTurn = true;
         private int m_PlayerHealth = 100;
         private int m_EnemyHealth = 100;
@@ -293,6 +295,7 @@ namespace Match3
             m_IsPlayerTurn = true;
             m_IsCombatMode = true;
             m_CurrentTurnGemsCleared = 0;
+            m_CurrentTurnWhiteGemsCleared = 0; // 重置白色寶石計數
             m_HasCalculatedDamageThisTurn = false;
             m_EnemyTurnTimer = 0f;
         }
@@ -1817,6 +1820,11 @@ namespace Match3
                         if (m_IsPlayerTurn)
                         {
                             m_CurrentTurnGemsCleared++;
+                            if (gem.GemType == 2)
+                            {
+                                m_CurrentTurnWhiteGemsCleared++;
+                                Debug.Log($"消除白色寶石！本回合白色寶石數量: {m_CurrentTurnWhiteGemsCleared}");
+                            }
                         }
 
                         //we only spawn coins for non bonus match
@@ -3330,53 +3338,27 @@ namespace Match3
         {
 
             //TODO : instead of going over every gems just do it on moved gems for optimization
-
-        
-
             m_PossibleSwaps.Clear();
-
-        
-
             //we use a double loop instead of directly querying the cells, so we access them in increasing x then y coordinate
-
             //this allow to just have to test swapping upward then right, as down and left will have been tested by previous
-
             //gem already
-
-
-
             for (int y = m_BoundsInt.yMin; y <= m_BoundsInt.yMax; ++y)
-
             {
-
                 for (int x = m_BoundsInt.xMin; x <= m_BoundsInt.xMax; ++x)
-
                 {
 
                     var idx = new Vector3Int(x, y, 0);
-
                     if (CellContent.TryGetValue(idx, out var cell) && cell.CanBeMoved)
-
                     {
-
                         var topIdx = idx + Vector3Int.up;
-
                         var rightIdx = idx + Vector3Int.right;
-
-                    
-
+                
                         if (CellContent.TryGetValue(topIdx, out var topCell) && topCell.CanBeMoved)
-
                         {
-
                             //swap the cell
-
                             (CellContent[idx].ContainingGem, CellContent[topIdx].ContainingGem) = (
 
                                 CellContent[topIdx].ContainingGem, CellContent[idx].ContainingGem);
-
-                        
-
                             if (DoCheck(topIdx, false))
 
                             {
@@ -3517,7 +3499,7 @@ namespace Match3
             {
                 // 基礎傷害計算：使用CombatConfig中的設定
                 int baseDamagePerGem = m_CombatConfig?.BaseDamagePerGem ?? 10;
-                int baseDamage = m_CurrentTurnGemsCleared * baseDamagePerGem;
+                int baseDamage = (m_CurrentTurnGemsCleared - m_CurrentTurnWhiteGemsCleared) * baseDamagePerGem;
                 
                 // 連擊加成：使用CombatConfig中的設定
                 int comboBonus = 0;
@@ -3531,9 +3513,22 @@ namespace Match3
                 
                 int totalDamage = baseDamage + comboBonus;
                 
+                // 計算治療量：白色寶石提供治療
+                int healAmount = 0;
+                if (m_CurrentTurnWhiteGemsCleared > 0)
+                {
+                    int healPerWhiteGem = m_CombatConfig?.HealPerWhiteGem ?? 5;
+                    healAmount = m_CurrentTurnWhiteGemsCleared * healPerWhiteGem;
+                    Debug.Log($"白色寶石治療！消除白色寶石數量: {m_CurrentTurnWhiteGemsCleared}, 治療量: {healAmount}");
+                }
+                
                 // 記錄傷害輸出
-                Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared}");
+                Debug.Log($"回合結束！消除寶石數量: {m_CurrentTurnGemsCleared} (其中白色寶石: {m_CurrentTurnWhiteGemsCleared})");
                 Debug.Log($"基礎傷害: {baseDamage}, 連擊加成: {comboBonus}, 總傷害: {totalDamage}");
+                if (healAmount > 0)
+                {
+                    Debug.Log($"治療量: {healAmount}");
+                }
                 
                 // 立即觸發玩家攻擊動畫
                 Debug.Log("觸發玩家攻擊動畫");
@@ -3541,6 +3536,13 @@ namespace Match3
                 
                 // 延遲0.25秒後更新敵人血量並觸發受傷動畫
                 StartCoroutine(DelayedEnemyDamage(totalDamage));
+                
+                // 如果有治療量，將治療量存儲起來，在敵人攻擊後使用
+                if (healAmount > 0)
+                {
+                    m_PendingHealAmount = healAmount;
+                    Debug.Log($"儲存治療量: {healAmount}，將在敵人攻擊後治療玩家");
+                }
             }
             else
             {
@@ -3560,7 +3562,8 @@ namespace Match3
         /// 延遲敵人受傷處理
         /// </summary>
         /// <param name="damage">傷害值</param>
-        private System.Collections.IEnumerator DelayedEnemyDamage(int damage)
+        /// <param name="healAmount">治療量</param>
+        private System.Collections.IEnumerator DelayedEnemyDamage(int damage, int healAmount = 0)
         {
             Debug.Log($"玩家攻擊動畫播放中，等待0.25秒後對敵人造成 {damage} 點傷害");
             
@@ -3611,7 +3614,54 @@ namespace Match3
             
             // 重置本回合寶石消除計數
             m_CurrentTurnGemsCleared = 0;
+            m_CurrentTurnWhiteGemsCleared = 0; // 重置白色寶石計數
         }
+        
+        /// <summary>
+        /// 治療玩家
+        /// </summary>
+        /// <param name="healAmount">治療量</param>
+        private System.Collections.IEnumerator HealPlayer(int healAmount)
+        {
+            Debug.Log($"開始治療玩家！治療量: {healAmount}");
+            
+            // 觸發治療動畫（如果有的話）
+            // 等待0.2秒讓治療動畫播放
+            yield return new WaitForSeconds(0.2f);
+            
+            // 計算實際治療量（不超過最大血量）
+            int maxHealAmount = m_CombatConfig?.MaxHealAmount ?? 100;
+            int actualHealAmount = Mathf.Min(healAmount, maxHealAmount - m_PlayerHealth);
+            
+            if (actualHealAmount > 0)
+            {
+                m_PlayerHealth += actualHealAmount;
+                Debug.Log($"玩家被治療！恢復血量: {actualHealAmount}, 當前血量: {m_PlayerHealth}");
+                
+                // 更新UI
+                UpdateCombatUI();
+            }
+            else
+            {
+                Debug.Log($"玩家血量已滿，無法治療 (當前血量: {m_PlayerHealth}, 最大血量: {maxHealAmount})");
+            }
+        }
+        
+        /// <summary>
+        /// 獲取並清除待處理的治療量
+        /// </summary>
+        /// <returns>待處理的治療量</returns>
+        public int GetAndClearPendingHealAmount()
+        {
+            int healAmount = m_PendingHealAmount;
+            m_PendingHealAmount = 0;
+            return healAmount;
+        }
+        
+        /// <summary>
+        /// 觸發玩家治療動畫
+        /// </summary>
+
 
     }
 

@@ -204,6 +204,20 @@ namespace Match3
             // 觸發玩家受傷動畫和血量更新
             TriggerPlayerHurtAnimation(currentPlayerHealth);
             
+            // 等待0.3秒讓受傷動畫播放
+            yield return new WaitForSeconds(0.3f);
+            
+            // 檢查是否有待處理的治療量（來自白色寶石）
+            if (board != null)
+            {
+                int healAmount = board.GetAndClearPendingHealAmount();
+                if (healAmount > 0)
+                {
+                    Debug.Log($"CombatUIController: 開始治療玩家！治療量: {healAmount}");
+                    yield return StartCoroutine(HealPlayerSequence(healAmount));
+                }
+            }
+            
             // 等待0.5秒後切換回玩家回合
             yield return new WaitForSeconds(0.5f);
             
@@ -221,6 +235,38 @@ namespace Match3
             // 更新UI
             StartCoroutine(AnimateHealthBars());
             UpdateHealthTexts();
+        }
+        
+        /// <summary>
+        /// 治療玩家序列
+        /// </summary>
+        /// <param name="healAmount">治療量</param>
+        private System.Collections.IEnumerator HealPlayerSequence(int healAmount)
+        {
+            Debug.Log($"CombatUIController: 開始治療序列，治療量: {healAmount}");
+            
+            // 等待0.2秒讓治療動畫播放
+            yield return new WaitForSeconds(0.2f);
+            
+            // 計算實際治療量（不超過最大血量）
+            int actualHealAmount = Mathf.Min(healAmount, maxPlayerHealth - currentPlayerHealth);
+            
+            if (actualHealAmount > 0)
+            {
+                currentPlayerHealth += actualHealAmount;
+                Debug.Log($"CombatUIController: 玩家被治療！恢復血量: {actualHealAmount}, 當前血量: {currentPlayerHealth}");
+                
+                // 更新Board中的玩家血量
+                UpdateBoardPlayerHealth(currentPlayerHealth);
+                
+                // 更新UI
+                StartCoroutine(AnimateHealthBars());
+                UpdateHealthTexts();
+            }
+            else
+            {
+                Debug.Log($"CombatUIController: 玩家血量已滿，無法治療 (當前血量: {currentPlayerHealth}, 最大血量: {maxPlayerHealth})");
+            }
         }
         
         /// <summary>
